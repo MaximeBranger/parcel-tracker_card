@@ -1,5 +1,8 @@
 # Parcel Tracker Card
 
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
+[![Validate](https://github.com/MaximeBranger/parcel-tracker_card/actions/workflows/validate.yaml/badge.svg)](https://github.com/MaximeBranger/parcel-tracker_card/actions/workflows/validate.yaml)
+
 Carte Lovelace personnalisée pour visualiser et gérer les colis suivis par l'intégration Home Assistant [`parcel_tracker`](https://github.com/MaximeBranger/parcel-tracker).
 
 Ce package HACS est **optionnel et séparé** de l'intégration backend : il ne fait aucun appel direct à un transporteur, il consomme uniquement les entités, attributs, services et événements exposés par `parcel_tracker`.
