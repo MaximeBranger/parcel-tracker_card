@@ -21,11 +21,14 @@ export interface HomeAssistantLike {
   entities: Record<string, HassEntityRegistryEntry>;
   formatEntityState?: (stateObj: HassEntity) => string;
   localize?: (key: string) => string;
-  callService: (
+  callService: <T = unknown>(
     domain: string,
     service: string,
     serviceData?: Record<string, unknown>,
-  ) => Promise<unknown>;
+    target?: undefined,
+    notifyOnError?: boolean,
+    returnResponse?: boolean,
+  ) => Promise<{ response?: T } | undefined>;
   connection: {
     subscribeEvents: <T = Record<string, unknown>>(
       callback: (event: HassEvent<T>) => void,

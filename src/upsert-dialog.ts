@@ -1,7 +1,7 @@
 import { LitElement, css, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
-import { CARRIERS } from "./carriers";
+import { CARRIERS, type CarrierOption } from "./carriers";
 import type { HomeAssistantLike } from "./types";
 
 const DOMAIN = "parcel_tracker";
@@ -37,6 +37,7 @@ export class ParcelTrackerUpsertDialog extends LitElement {
   @state() private _notes = "";
   @state() private _submitting = false;
   @state() private _error: string | null = null;
+  @state() private _availableCarriers: CarrierOption[] = CARRIERS;
 
   private _originalTrackingNumber = "";
   private _originalCarrier = CARRIERS[0].value;
@@ -52,7 +53,9 @@ export class ParcelTrackerUpsertDialog extends LitElement {
     this._name = "";
     this._notes = "";
     this._error = null;
+    this._availableCarriers = CARRIERS;
     this._open = true;
+    void this._loadAvailableCarriers();
   }
 
   openForEdit(target: UpsertTarget): void {
@@ -64,7 +67,52 @@ export class ParcelTrackerUpsertDialog extends LitElement {
     this._name = target.name;
     this._notes = target.notes;
     this._error = null;
+    this._availableCarriers = CARRIERS;
     this._open = true;
+    void this._loadAvailableCarriers();
+  }
+
+  private async _loadAvailableCarriers(): Promise<void> {
+    if (!this.hass) return;
+    const openedFor = this._parcelId;
+
+    let configured = CARRIERS.map((carrier) => carrier.value);
+    try {
+      const result = await this.hass.callService<{ carriers: string[] }>(
+        DOMAIN,
+        "get_configured_carriers",
+        {},
+        undefined,
+        true,
+        true,
+      );
+      if (result?.response?.carriers) configured = result.response.carriers;
+    } catch (err) {
+      console.error("parcel_tracker.get_configured_carriers failed", err);
+    }
+
+    // The dialog may have been closed and reopened for a different parcel
+    // (or for add) while this call was in flight.
+    if (!this._open || this._parcelId !== openedFor) return;
+
+    const carriers = CARRIERS.filter((carrier) => configured.includes(carrier.value));
+
+    if (this._parcelId !== null && !carriers.some((carrier) => carrier.value === this._carrier)) {
+      // Editing a parcel whose carrier's credentials were since removed must
+      // still offer that carrier, so saving unrelated fields doesn't force
+      // an unwanted carrier change (mirrors
+      // ParcelTrackerOptionsFlow.async_step_edit_parcel in the backend).
+      const current = CARRIERS.find((carrier) => carrier.value === this._carrier);
+      if (current) carriers.unshift(current);
+    } else if (
+      this._parcelId === null &&
+      carriers.length > 0 &&
+      !carriers.some((carrier) => carrier.value === this._carrier)
+    ) {
+      this._carrier = carriers[0].value;
+    }
+
+    this._availableCarriers = carriers.length > 0 ? carriers : CARRIERS;
   }
 
   disconnectedCallback(): void {
@@ -207,7 +255,7 @@ export class ParcelTrackerUpsertDialog extends LitElement {
             .value=${this._carrier}
             @change=${(ev: Event) => (this._carrier = (ev.target as HTMLSelectElement).value)}
           >
-            ${CARRIERS.map(
+            ${this._availableCarriers.map(
               (carrier) =>
                 html`<option value=${carrier.value} ?selected=${carrier.value === this._carrier}>
                   ${carrier.label}

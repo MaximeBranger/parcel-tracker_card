@@ -95,6 +95,7 @@ Chaque événement de l'historique comprend :
 * `parcel_tracker.refresh` — rafraîchit tous les colis actifs ; pas de variante par colis.
 * `parcel_tracker.archive`
 * `parcel_tracker.get_history` — retourne l'historique des colis (actifs et archivés), filtrable par mois, année et transporteur. Voie d'accès principale pour une vue « archives » dans la carte, le registre d'entités HA n'étant pas prévu pour ce type de requête.
+* `parcel_tracker.get_configured_carriers` — retourne les transporteurs dont les identifiants sont configurés sur l'entrée (`{"carriers": [...]}`). Utilisé par le dialogue Ajouter/Modifier pour ne proposer que ces transporteurs dans le sélecteur — la carte n'a pas accès aux données de la config entry (clés API) pour le déterminer elle-même.
 
 `parcel_id` correspond au `unique_id` de l'entité (exposé par le registre d'entités HA), pas au `tracking_number`.
 
@@ -129,6 +130,8 @@ La carte ne se contente pas d'afficher les colis : elle permet de les gérer dir
 ### Dialogue Ajouter / Modifier
 
 Un unique dialogue « upsert », implémenté avec `ha-dialog` (fourni par le frontend HA au runtime, déjà utilisé de facto via `ha-icon`/`ha-card`), réutilisé pré-rempli en mode modification (appelle `update` avec le `parcel_id` au lieu d'`add`).
+
+Le sélecteur de transporteur n'affiche que les transporteurs configurés (appel à `parcel_tracker.get_configured_carriers` à l'ouverture du dialogue), à l'exception du transporteur déjà sélectionné en mode modification : celui-ci reste proposé même si ses identifiants ont depuis été retirés de la configuration, pour ne pas forcer un changement de transporteur non désiré en modifiant un autre champ — même règle que `ParcelTrackerOptionsFlow.async_step_edit_parcel` côté backend. Si l'appel échoue ou si aucun transporteur n'est configuré, la carte retombe sur la liste complète plutôt que de bloquer le formulaire.
 
 Champs, alignés sur ceux acceptés par les services `add`/`update` :
 
