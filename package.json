@@ -1,0 +1,25 @@
+{
+  "name": "parcel-tracker-card",
+  "version": "0.1.0",
+  "description": "Custom Lovelace card for the Parcel Tracker Home Assistant integration.",
+  "main": "dist/parcel-tracker-card.js",
+  "scripts": {
+    "build": "rollup -c",
+    "watch": "rollup -c --watch"
+  },
+  "license": "MIT",
+  "author": "MaximeBranger",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MaximeBranger/parcel-tracker_card"
+  },
+  "dependencies": {
+    "lit": "^3.1.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^15.2.0",
+    "@rollup/plugin-typescript": "^11.1.0",
+    "rollup": "^4.9.0",
+    "typescript": "^5.3.0"
+  }
+}
