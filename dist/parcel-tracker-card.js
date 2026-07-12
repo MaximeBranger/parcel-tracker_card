@@ -72,6 +72,47 @@ const t=t=>(e,o)=>{ void 0!==o?o.addInitializer(()=>{customElements.define(t,e);
  * SPDX-License-Identifier: BSD-3-Clause
  */function r(r){return n({...r,state:true,attribute:false})}
 
+const STATUS_META = {
+    created: { icon: "mdi:package-variant-closed", color: "var(--disabled-text-color)" },
+    taken_in_charge: { icon: "mdi:hand-back-right-outline", color: "var(--info-color)" },
+    in_transit: { icon: "mdi:truck-fast-outline", color: "var(--info-color)" },
+    at_sorting_center: { icon: "mdi:warehouse", color: "var(--info-color)" },
+    out_for_delivery: { icon: "mdi:truck-delivery-outline", color: "var(--info-color)" },
+    delivered: { icon: "mdi:package-variant-closed-check", color: "var(--success-color)" },
+    delayed: { icon: "mdi:clock-alert-outline", color: "var(--warning-color)" },
+    incident: { icon: "mdi:alert-circle-outline", color: "var(--error-color)" },
+    returned_to_sender: { icon: "mdi:keyboard-return", color: "var(--error-color)" },
+};
+const DEFAULT_STATUS_META = {
+    icon: "mdi:package-variant",
+    color: "var(--disabled-text-color)",
+};
+const GLOBAL_COUNTER_ICONS = {
+    parcels_active: "mdi:truck-fast-outline",
+    parcels_delivered: "mdi:package-variant-closed-check",
+    parcels_waiting: "mdi:package-variant-closed",
+    parcels_today: "mdi:calendar-check-outline",
+    parcels_late: "mdi:clock-alert-outline",
+};
+const GLOBAL_COUNTER_TRANSLATION_KEYS = Object.keys(GLOBAL_COUNTER_ICONS);
+function globalCounterIcon(translationKey) {
+    return GLOBAL_COUNTER_ICONS[translationKey] ?? "mdi:counter";
+}
+
+const PLATFORM = "parcel_tracker";
+const PARCEL_TRANSLATION_KEY = "parcel";
+function fireEvent(target, type, detail) {
+    target.dispatchEvent(new CustomEvent(type, { detail, bubbles: true, composed: true }));
+}
+const dateFormatter = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });
+function formatDate(value) {
+    if (!value)
+        return null;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime()))
+        return null;
+    return dateFormatter.format(date);
+}
 let ParcelTrackerCard = class ParcelTrackerCard extends i {
     setConfig(config) {
         this._config = config;
@@ -79,15 +120,202 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
     static getStubConfig() {
         return { type: "custom:parcel-tracker-card" };
     }
+    getCardSize() {
+        return 1 + this._parcelEntities().length;
+    }
+    _entriesByTranslationKey(keys) {
+        const hass = this.hass;
+        if (!hass)
+            return [];
+        const result = [];
+        for (const entry of Object.values(hass.entities)) {
+            if (entry.platform !== PLATFORM)
+                continue;
+            if (keys && !keys.has(entry.translation_key ?? ""))
+                continue;
+            const stateObj = hass.states[entry.entity_id];
+            if (stateObj)
+                result.push(stateObj);
+        }
+        return result;
+    }
+    _globalCounters() {
+        const keys = new Set(GLOBAL_COUNTER_TRANSLATION_KEYS);
+        return this._entriesByTranslationKey(keys).sort((a, b) => GLOBAL_COUNTER_TRANSLATION_KEYS.indexOf(this._translationKey(a)) -
+            GLOBAL_COUNTER_TRANSLATION_KEYS.indexOf(this._translationKey(b)));
+    }
+    _translationKey(stateObj) {
+        return this.hass?.entities[stateObj.entity_id]?.translation_key ?? "";
+    }
+    _parcelEntities() {
+        const parcels = this._entriesByTranslationKey(new Set([PARCEL_TRANSLATION_KEY]));
+        return parcels.sort((a, b) => {
+            const aDelivered = a.state === "delivered";
+            const bDelivered = b.state === "delivered";
+            if (aDelivered !== bDelivered)
+                return aDelivered ? 1 : -1;
+            const aEta = a.attributes.estimated_delivery;
+            const bEta = b.attributes.estimated_delivery;
+            if (aEta && bEta && aEta !== bEta)
+                return aEta < bEta ? -1 : 1;
+            if (aEta && !bEta)
+                return -1;
+            if (!aEta && bEta)
+                return 1;
+            const aName = String(a.attributes.friendly_name ?? "");
+            const bName = String(b.attributes.friendly_name ?? "");
+            return aName.localeCompare(bName);
+        });
+    }
+    _formatState(stateObj) {
+        if (this.hass?.formatEntityState) {
+            return this.hass.formatEntityState(stateObj);
+        }
+        return stateObj.state;
+    }
+    _openMoreInfo(entityId) {
+        fireEvent(this, "hass-more-info", { entityId });
+    }
+    _renderCounters() {
+        const counters = this._globalCounters();
+        if (counters.length === 0)
+            return A;
+        return b `<div class="counters">
+      ${counters.map((stateObj) => b `<div class="counter">
+          <ha-icon icon=${globalCounterIcon(this._translationKey(stateObj))}></ha-icon>
+          <span class="counter-value">${stateObj.state}</span>
+          <span class="counter-label">${stateObj.attributes.friendly_name ?? stateObj.entity_id}</span>
+        </div>`)}
+    </div>`;
+    }
+    _renderParcelRow(stateObj) {
+        const attrs = stateObj.attributes;
+        const meta = STATUS_META[stateObj.state] ?? DEFAULT_STATUS_META;
+        const name = String(stateObj.attributes.friendly_name ?? stateObj.entity_id);
+        let secondary = attrs.carrier;
+        if (stateObj.state === "delivered") {
+            const delivered = formatDate(attrs.last_update);
+            if (delivered)
+                secondary += ` · Livré le ${delivered}`;
+        }
+        else {
+            const eta = formatDate(attrs.estimated_delivery);
+            if (eta) {
+                secondary += ` · Livraison estimée le ${eta}`;
+            }
+            else if (attrs.days_since_shipping !== null) {
+                secondary += ` · Depuis ${attrs.days_since_shipping} j.`;
+            }
+        }
+        return b `<div
+      class="parcel-row"
+      role="button"
+      tabindex="0"
+      @click=${() => this._openMoreInfo(stateObj.entity_id)}
+      @keydown=${(ev) => {
+            if (ev.key === "Enter" || ev.key === " ")
+                this._openMoreInfo(stateObj.entity_id);
+        }}
+    >
+      <ha-icon icon=${meta.icon} style="color: ${meta.color}"></ha-icon>
+      <div class="parcel-info">
+        <span class="parcel-name">${name}</span>
+        <span class="parcel-secondary">${secondary}</span>
+      </div>
+      <span class="parcel-status" style="color: ${meta.color}">${this._formatState(stateObj)}</span>
+    </div>`;
+    }
     render() {
-        return b `<ha-card header=${this._config?.title ?? "Parcel Tracker"}>
-      <div class="card-content">Coming soon.</div>
+        if (!this.hass || !this._config)
+            return A;
+        const parcels = this._parcelEntities();
+        return b `<ha-card header=${this._config.title ?? "Parcel Tracker"}>
+      <div class="card-content">
+        ${this._renderCounters()}
+        ${parcels.length === 0
+            ? b `<div class="empty">Aucun colis suivi.</div>`
+            : b `<div class="parcels">${parcels.map((p) => this._renderParcelRow(p))}</div>`}
+      </div>
     </ha-card>`;
     }
 };
 ParcelTrackerCard.styles = i$3 `
     .card-content {
-      padding: 16px;
+      padding: 0 0 8px;
+    }
+
+    .counters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      padding: 8px 16px 16px;
+    }
+
+    .counter {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--secondary-text-color);
+      font-size: 0.9em;
+    }
+
+    .counter ha-icon {
+      --mdc-icon-size: 18px;
+    }
+
+    .counter-value {
+      font-weight: 500;
+      color: var(--primary-text-color);
+    }
+
+    .empty {
+      padding: 8px 16px 16px;
+      color: var(--secondary-text-color);
+    }
+
+    .parcels {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .parcel-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 8px 16px;
+      cursor: pointer;
+    }
+
+    .parcel-row:hover {
+      background: var(--secondary-background-color);
+    }
+
+    .parcel-info {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .parcel-name {
+      font-weight: 500;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .parcel-secondary {
+      font-size: 0.85em;
+      color: var(--secondary-text-color);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .parcel-status {
+      font-size: 0.85em;
+      font-weight: 500;
+      white-space: nowrap;
     }
   `;
 __decorate([
