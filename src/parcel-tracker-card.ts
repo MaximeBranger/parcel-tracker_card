@@ -5,6 +5,7 @@ import {
   DEFAULT_STATUS_META,
   GLOBAL_COUNTER_TRANSLATION_KEYS,
   STATUS_META,
+  globalCounterColor,
   globalCounterIcon,
 } from "./status";
 import type {
@@ -39,6 +40,16 @@ function formatDate(value: string | null): string | null {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
   return dateFormatter.format(date);
+}
+
+// Parcel entities aren't `has_entity_name`, but HA still prefixes the hub
+// device's name onto their friendly_name. Strip it back off for display —
+// the parcel's own name (e.g. "Leroy") is more useful here than "Parcel
+// Tracker Leroy".
+const DEVICE_NAME_PREFIX = "Parcel Tracker ";
+
+function stripDevicePrefix(name: string): string {
+  return name.startsWith(DEVICE_NAME_PREFIX) ? name.slice(DEVICE_NAME_PREFIX.length) : name;
 }
 
 @customElement("parcel-tracker-card")
@@ -114,24 +125,35 @@ export class ParcelTrackerCard extends LitElement {
     fireEvent(this, "hass-more-info", { entityId });
   }
 
+  private _counterLabel(stateObj: HassEntity): string {
+    const translationKey = this._translationKey(stateObj);
+    const localized = this.hass?.localize?.(
+      `component.${PLATFORM}.entity.sensor.${translationKey}.name`,
+    );
+    return localized || String(stateObj.attributes.friendly_name ?? stateObj.entity_id);
+  }
+
   private _renderCounters() {
     const counters = this._globalCounters();
     if (counters.length === 0) return nothing;
     return html`<div class="counters">
-      ${counters.map(
-        (stateObj) => html`<div class="counter">
-          <ha-icon icon=${globalCounterIcon(this._translationKey(stateObj))}></ha-icon>
+      ${counters.map((stateObj) => {
+        const color = globalCounterColor(this._translationKey(stateObj));
+        return html`<div class="counter-tile">
+          <div class="counter-icon" style="background: ${color}">
+            <ha-icon icon=${globalCounterIcon(this._translationKey(stateObj))}></ha-icon>
+          </div>
           <span class="counter-value">${stateObj.state}</span>
-          <span class="counter-label">${stateObj.attributes.friendly_name ?? stateObj.entity_id}</span>
-        </div>`,
-      )}
+          <span class="counter-label">${this._counterLabel(stateObj)}</span>
+        </div>`;
+      })}
     </div>`;
   }
 
   private _renderParcelRow(stateObj: HassEntity) {
     const attrs = stateObj.attributes as unknown as ParcelAttributes;
     const meta = STATUS_META[stateObj.state] ?? DEFAULT_STATUS_META;
-    const name = String(stateObj.attributes.friendly_name ?? stateObj.entity_id);
+    const name = stripDevicePrefix(String(stateObj.attributes.friendly_name ?? stateObj.entity_id));
 
     let secondary = attrs.carrier;
     if (stateObj.state === "delivered") {
@@ -160,7 +182,7 @@ export class ParcelTrackerCard extends LitElement {
         <span class="parcel-name">${name}</span>
         <span class="parcel-secondary">${secondary}</span>
       </div>
-      <span class="parcel-status" style="color: ${meta.color}">${this._formatState(stateObj)}</span>
+      <span class="parcel-status" style="background: ${meta.color}">${this._formatState(stateObj)}</span>
     </div>`;
   }
 
@@ -185,27 +207,47 @@ export class ParcelTrackerCard extends LitElement {
     }
 
     .counters {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-      padding: 8px 16px 16px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+      gap: 8px;
+      padding: 12px 16px 16px;
     }
 
-    .counter {
+    .counter-tile {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 12px 4px;
+      border-radius: 12px;
+      background: var(--secondary-background-color);
+      text-align: center;
+    }
+
+    .counter-icon {
       display: flex;
       align-items: center;
-      gap: 6px;
-      color: var(--secondary-text-color);
-      font-size: 0.9em;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      color: var(--card-background-color, #fff);
     }
 
-    .counter ha-icon {
+    .counter-icon ha-icon {
       --mdc-icon-size: 18px;
     }
 
     .counter-value {
-      font-weight: 500;
+      font-size: 1.3em;
+      font-weight: 600;
       color: var(--primary-text-color);
+    }
+
+    .counter-label {
+      font-size: 0.75em;
+      color: var(--secondary-text-color);
+      line-height: 1.2;
     }
 
     .empty {
@@ -253,9 +295,12 @@ export class ParcelTrackerCard extends LitElement {
     }
 
     .parcel-status {
-      font-size: 0.85em;
+      font-size: 0.8em;
       font-weight: 500;
       white-space: nowrap;
+      color: var(--card-background-color, #fff);
+      padding: 3px 10px;
+      border-radius: 999px;
     }
   `;
 }

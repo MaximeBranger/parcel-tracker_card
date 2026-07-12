@@ -28,8 +28,20 @@ const GLOBAL_COUNTER_ICONS: Record<string, string> = {
   parcels_late: "mdi:clock-alert-outline",
 };
 
+const GLOBAL_COUNTER_COLORS: Record<string, string> = {
+  parcels_active: "var(--info-color)",
+  parcels_delivered: "var(--success-color)",
+  parcels_waiting: "var(--disabled-text-color)",
+  parcels_today: "var(--success-color)",
+  parcels_late: "var(--warning-color)",
+};
+
 export const GLOBAL_COUNTER_TRANSLATION_KEYS = Object.keys(GLOBAL_COUNTER_ICONS);
 
 export function globalCounterIcon(translationKey: string): string {
   return GLOBAL_COUNTER_ICONS[translationKey] ?? "mdi:counter";
+}
+
+export function globalCounterColor(translationKey: string): string {
+  return GLOBAL_COUNTER_COLORS[translationKey] ?? "var(--disabled-text-color)";
 }

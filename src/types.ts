@@ -14,6 +14,7 @@ export interface HomeAssistantLike {
   states: Record<string, HassEntity>;
   entities: Record<string, HassEntityRegistryEntry>;
   formatEntityState?: (stateObj: HassEntity) => string;
+  localize?: (key: string) => string;
 }
 
 export interface ParcelAttributes {

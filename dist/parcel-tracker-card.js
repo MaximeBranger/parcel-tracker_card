@@ -94,9 +94,19 @@ const GLOBAL_COUNTER_ICONS = {
     parcels_today: "mdi:calendar-check-outline",
     parcels_late: "mdi:clock-alert-outline",
 };
+const GLOBAL_COUNTER_COLORS = {
+    parcels_active: "var(--info-color)",
+    parcels_delivered: "var(--success-color)",
+    parcels_waiting: "var(--disabled-text-color)",
+    parcels_today: "var(--success-color)",
+    parcels_late: "var(--warning-color)",
+};
 const GLOBAL_COUNTER_TRANSLATION_KEYS = Object.keys(GLOBAL_COUNTER_ICONS);
 function globalCounterIcon(translationKey) {
     return GLOBAL_COUNTER_ICONS[translationKey] ?? "mdi:counter";
+}
+function globalCounterColor(translationKey) {
+    return GLOBAL_COUNTER_COLORS[translationKey] ?? "var(--disabled-text-color)";
 }
 
 const PLATFORM = "parcel_tracker";
@@ -112,6 +122,14 @@ function formatDate(value) {
     if (Number.isNaN(date.getTime()))
         return null;
     return dateFormatter.format(date);
+}
+// Parcel entities aren't `has_entity_name`, but HA still prefixes the hub
+// device's name onto their friendly_name. Strip it back off for display —
+// the parcel's own name (e.g. "Leroy") is more useful here than "Parcel
+// Tracker Leroy".
+const DEVICE_NAME_PREFIX = "Parcel Tracker ";
+function stripDevicePrefix(name) {
+    return name.startsWith(DEVICE_NAME_PREFIX) ? name.slice(DEVICE_NAME_PREFIX.length) : name;
 }
 let ParcelTrackerCard = class ParcelTrackerCard extends i {
     setConfig(config) {
@@ -176,22 +194,32 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
     _openMoreInfo(entityId) {
         fireEvent(this, "hass-more-info", { entityId });
     }
+    _counterLabel(stateObj) {
+        const translationKey = this._translationKey(stateObj);
+        const localized = this.hass?.localize?.(`component.${PLATFORM}.entity.sensor.${translationKey}.name`);
+        return localized || String(stateObj.attributes.friendly_name ?? stateObj.entity_id);
+    }
     _renderCounters() {
         const counters = this._globalCounters();
         if (counters.length === 0)
             return A;
         return b `<div class="counters">
-      ${counters.map((stateObj) => b `<div class="counter">
-          <ha-icon icon=${globalCounterIcon(this._translationKey(stateObj))}></ha-icon>
+      ${counters.map((stateObj) => {
+            const color = globalCounterColor(this._translationKey(stateObj));
+            return b `<div class="counter-tile">
+          <div class="counter-icon" style="background: ${color}">
+            <ha-icon icon=${globalCounterIcon(this._translationKey(stateObj))}></ha-icon>
+          </div>
           <span class="counter-value">${stateObj.state}</span>
-          <span class="counter-label">${stateObj.attributes.friendly_name ?? stateObj.entity_id}</span>
-        </div>`)}
+          <span class="counter-label">${this._counterLabel(stateObj)}</span>
+        </div>`;
+        })}
     </div>`;
     }
     _renderParcelRow(stateObj) {
         const attrs = stateObj.attributes;
         const meta = STATUS_META[stateObj.state] ?? DEFAULT_STATUS_META;
-        const name = String(stateObj.attributes.friendly_name ?? stateObj.entity_id);
+        const name = stripDevicePrefix(String(stateObj.attributes.friendly_name ?? stateObj.entity_id));
         let secondary = attrs.carrier;
         if (stateObj.state === "delivered") {
             const delivered = formatDate(attrs.last_update);
@@ -222,7 +250,7 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
         <span class="parcel-name">${name}</span>
         <span class="parcel-secondary">${secondary}</span>
       </div>
-      <span class="parcel-status" style="color: ${meta.color}">${this._formatState(stateObj)}</span>
+      <span class="parcel-status" style="background: ${meta.color}">${this._formatState(stateObj)}</span>
     </div>`;
     }
     render() {
@@ -245,27 +273,47 @@ ParcelTrackerCard.styles = i$3 `
     }
 
     .counters {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-      padding: 8px 16px 16px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+      gap: 8px;
+      padding: 12px 16px 16px;
     }
 
-    .counter {
+    .counter-tile {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 12px 4px;
+      border-radius: 12px;
+      background: var(--secondary-background-color);
+      text-align: center;
+    }
+
+    .counter-icon {
       display: flex;
       align-items: center;
-      gap: 6px;
-      color: var(--secondary-text-color);
-      font-size: 0.9em;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      color: var(--card-background-color, #fff);
     }
 
-    .counter ha-icon {
+    .counter-icon ha-icon {
       --mdc-icon-size: 18px;
     }
 
     .counter-value {
-      font-weight: 500;
+      font-size: 1.3em;
+      font-weight: 600;
       color: var(--primary-text-color);
+    }
+
+    .counter-label {
+      font-size: 0.75em;
+      color: var(--secondary-text-color);
+      line-height: 1.2;
     }
 
     .empty {
@@ -313,9 +361,12 @@ ParcelTrackerCard.styles = i$3 `
     }
 
     .parcel-status {
-      font-size: 0.85em;
+      font-size: 0.8em;
       font-weight: 500;
       white-space: nowrap;
+      color: var(--card-background-color, #fff);
+      padding: 3px 10px;
+      border-radius: 999px;
     }
   `;
 __decorate([
