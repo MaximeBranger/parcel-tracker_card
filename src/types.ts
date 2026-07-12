@@ -8,6 +8,12 @@ export interface HassEntityRegistryEntry {
   entity_id: string;
   platform: string;
   translation_key?: string;
+  unique_id: string;
+}
+
+export interface HassEvent<T = Record<string, unknown>> {
+  event_type: string;
+  data: T;
 }
 
 export interface HomeAssistantLike {
@@ -15,6 +21,17 @@ export interface HomeAssistantLike {
   entities: Record<string, HassEntityRegistryEntry>;
   formatEntityState?: (stateObj: HassEntity) => string;
   localize?: (key: string) => string;
+  callService: (
+    domain: string,
+    service: string,
+    serviceData?: Record<string, unknown>,
+  ) => Promise<unknown>;
+  connection: {
+    subscribeEvents: <T = Record<string, unknown>>(
+      callback: (event: HassEvent<T>) => void,
+      eventType: string,
+    ) => Promise<() => void>;
+  };
 }
 
 export interface ParcelAttributes {
@@ -32,4 +49,5 @@ export interface ParcelAttributes {
 export interface ParcelTrackerCardConfig {
   type: string;
   title?: string;
+  editable?: boolean;
 }

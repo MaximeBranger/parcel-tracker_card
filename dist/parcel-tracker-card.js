@@ -32,20 +32,20 @@ typeof SuppressedError === "function" ? SuppressedError : function (error, suppr
  * Copyright 2019 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */
-const t$2=globalThis,e$2=t$2.ShadowRoot&&(void 0===t$2.ShadyCSS||t$2.ShadyCSS.nativeShadow)&&"adoptedStyleSheets"in Document.prototype&&"replace"in CSSStyleSheet.prototype,s$2=Symbol(),o$4=new WeakMap;let n$3 = class n{constructor(t,e,o){if(this._$cssResult$=true,o!==s$2)throw Error("CSSResult is not constructable. Use `unsafeCSS` or `css` instead.");this.cssText=t,this.t=e;}get styleSheet(){let t=this.o;const s=this.t;if(e$2&&void 0===t){const e=void 0!==s&&1===s.length;e&&(t=o$4.get(s)),void 0===t&&((this.o=t=new CSSStyleSheet).replaceSync(this.cssText),e&&o$4.set(s,t));}return t}toString(){return this.cssText}};const r$4=t=>new n$3("string"==typeof t?t:t+"",void 0,s$2),i$3=(t,...e)=>{const o=1===t.length?t[0]:e.reduce((e,s,o)=>e+(t=>{if(true===t._$cssResult$)return t.cssText;if("number"==typeof t)return t;throw Error("Value passed to 'css' function must be a 'css' function result: "+t+". Use 'unsafeCSS' to pass non-literal values, but take care to ensure page security.")})(s)+t[o+1],t[0]);return new n$3(o,t,s$2)},S$1=(s,o)=>{if(e$2)s.adoptedStyleSheets=o.map(t=>t instanceof CSSStyleSheet?t:t.styleSheet);else for(const e of o){const o=document.createElement("style"),n=t$2.litNonce;void 0!==n&&o.setAttribute("nonce",n),o.textContent=e.cssText,s.appendChild(o);}},c$2=e$2?t=>t:t=>t instanceof CSSStyleSheet?(t=>{let e="";for(const s of t.cssRules)e+=s.cssText;return r$4(e)})(t):t;
+const t$2=globalThis,e$4=t$2.ShadowRoot&&(void 0===t$2.ShadyCSS||t$2.ShadyCSS.nativeShadow)&&"adoptedStyleSheets"in Document.prototype&&"replace"in CSSStyleSheet.prototype,s$2=Symbol(),o$4=new WeakMap;let n$3 = class n{constructor(t,e,o){if(this._$cssResult$=true,o!==s$2)throw Error("CSSResult is not constructable. Use `unsafeCSS` or `css` instead.");this.cssText=t,this.t=e;}get styleSheet(){let t=this.o;const s=this.t;if(e$4&&void 0===t){const e=void 0!==s&&1===s.length;e&&(t=o$4.get(s)),void 0===t&&((this.o=t=new CSSStyleSheet).replaceSync(this.cssText),e&&o$4.set(s,t));}return t}toString(){return this.cssText}};const r$4=t=>new n$3("string"==typeof t?t:t+"",void 0,s$2),i$3=(t,...e)=>{const o=1===t.length?t[0]:e.reduce((e,s,o)=>e+(t=>{if(true===t._$cssResult$)return t.cssText;if("number"==typeof t)return t;throw Error("Value passed to 'css' function must be a 'css' function result: "+t+". Use 'unsafeCSS' to pass non-literal values, but take care to ensure page security.")})(s)+t[o+1],t[0]);return new n$3(o,t,s$2)},S$1=(s,o)=>{if(e$4)s.adoptedStyleSheets=o.map(t=>t instanceof CSSStyleSheet?t:t.styleSheet);else for(const e of o){const o=document.createElement("style"),n=t$2.litNonce;void 0!==n&&o.setAttribute("nonce",n),o.textContent=e.cssText,s.appendChild(o);}},c$2=e$4?t=>t:t=>t instanceof CSSStyleSheet?(t=>{let e="";for(const s of t.cssRules)e+=s.cssText;return r$4(e)})(t):t;
 
 /**
  * @license
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
- */const{is:i$2,defineProperty:e$1,getOwnPropertyDescriptor:h$1,getOwnPropertyNames:r$3,getOwnPropertySymbols:o$3,getPrototypeOf:n$2}=Object,a$1=globalThis,c$1=a$1.trustedTypes,l$1=c$1?c$1.emptyScript:"",p$1=a$1.reactiveElementPolyfillSupport,d$1=(t,s)=>t,u$1={toAttribute(t,s){switch(s){case Boolean:t=t?l$1:null;break;case Object:case Array:t=null==t?t:JSON.stringify(t);}return t},fromAttribute(t,s){let i=t;switch(s){case Boolean:i=null!==t;break;case Number:i=null===t?null:Number(t);break;case Object:case Array:try{i=JSON.parse(t);}catch(t){i=null;}}return i}},f$1=(t,s)=>!i$2(t,s),b$1={attribute:true,type:String,converter:u$1,reflect:false,useDefault:false,hasChanged:f$1};Symbol.metadata??=Symbol("metadata"),a$1.litPropertyMetadata??=new WeakMap;let y$1 = class y extends HTMLElement{static addInitializer(t){this._$Ei(),(this.l??=[]).push(t);}static get observedAttributes(){return this.finalize(),this._$Eh&&[...this._$Eh.keys()]}static createProperty(t,s=b$1){if(s.state&&(s.attribute=false),this._$Ei(),this.prototype.hasOwnProperty(t)&&((s=Object.create(s)).wrapped=true),this.elementProperties.set(t,s),!s.noAccessor){const i=Symbol(),h=this.getPropertyDescriptor(t,i,s);void 0!==h&&e$1(this.prototype,t,h);}}static getPropertyDescriptor(t,s,i){const{get:e,set:r}=h$1(this.prototype,t)??{get(){return this[s]},set(t){this[s]=t;}};return {get:e,set(s){const h=e?.call(this);r?.call(this,s),this.requestUpdate(t,h,i);},configurable:true,enumerable:true}}static getPropertyOptions(t){return this.elementProperties.get(t)??b$1}static _$Ei(){if(this.hasOwnProperty(d$1("elementProperties")))return;const t=n$2(this);t.finalize(),void 0!==t.l&&(this.l=[...t.l]),this.elementProperties=new Map(t.elementProperties);}static finalize(){if(this.hasOwnProperty(d$1("finalized")))return;if(this.finalized=true,this._$Ei(),this.hasOwnProperty(d$1("properties"))){const t=this.properties,s=[...r$3(t),...o$3(t)];for(const i of s)this.createProperty(i,t[i]);}const t=this[Symbol.metadata];if(null!==t){const s=litPropertyMetadata.get(t);if(void 0!==s)for(const[t,i]of s)this.elementProperties.set(t,i);}this._$Eh=new Map;for(const[t,s]of this.elementProperties){const i=this._$Eu(t,s);void 0!==i&&this._$Eh.set(i,t);}this.elementStyles=this.finalizeStyles(this.styles);}static finalizeStyles(s){const i=[];if(Array.isArray(s)){const e=new Set(s.flat(1/0).reverse());for(const s of e)i.unshift(c$2(s));}else void 0!==s&&i.push(c$2(s));return i}static _$Eu(t,s){const i=s.attribute;return  false===i?void 0:"string"==typeof i?i:"string"==typeof t?t.toLowerCase():void 0}constructor(){super(),this._$Ep=void 0,this.isUpdatePending=false,this.hasUpdated=false,this._$Em=null,this._$Ev();}_$Ev(){this._$ES=new Promise(t=>this.enableUpdating=t),this._$AL=new Map,this._$E_(),this.requestUpdate(),this.constructor.l?.forEach(t=>t(this));}addController(t){(this._$EO??=new Set).add(t),void 0!==this.renderRoot&&this.isConnected&&t.hostConnected?.();}removeController(t){this._$EO?.delete(t);}_$E_(){const t=new Map,s=this.constructor.elementProperties;for(const i of s.keys())this.hasOwnProperty(i)&&(t.set(i,this[i]),delete this[i]);t.size>0&&(this._$Ep=t);}createRenderRoot(){const t=this.shadowRoot??this.attachShadow(this.constructor.shadowRootOptions);return S$1(t,this.constructor.elementStyles),t}connectedCallback(){this.renderRoot??=this.createRenderRoot(),this.enableUpdating(true),this._$EO?.forEach(t=>t.hostConnected?.());}enableUpdating(t){}disconnectedCallback(){this._$EO?.forEach(t=>t.hostDisconnected?.());}attributeChangedCallback(t,s,i){this._$AK(t,i);}_$ET(t,s){const i=this.constructor.elementProperties.get(t),e=this.constructor._$Eu(t,i);if(void 0!==e&&true===i.reflect){const h=(void 0!==i.converter?.toAttribute?i.converter:u$1).toAttribute(s,i.type);this._$Em=t,null==h?this.removeAttribute(e):this.setAttribute(e,h),this._$Em=null;}}_$AK(t,s){const i=this.constructor,e=i._$Eh.get(t);if(void 0!==e&&this._$Em!==e){const t=i.getPropertyOptions(e),h="function"==typeof t.converter?{fromAttribute:t.converter}:void 0!==t.converter?.fromAttribute?t.converter:u$1;this._$Em=e;const r=h.fromAttribute(s,t.type);this[e]=r??this._$Ej?.get(e)??r,this._$Em=null;}}requestUpdate(t,s,i,e=false,h){if(void 0!==t){const r=this.constructor;if(false===e&&(h=this[t]),i??=r.getPropertyOptions(t),!((i.hasChanged??f$1)(h,s)||i.useDefault&&i.reflect&&h===this._$Ej?.get(t)&&!this.hasAttribute(r._$Eu(t,i))))return;this.C(t,s,i);} false===this.isUpdatePending&&(this._$ES=this._$EP());}C(t,s,{useDefault:i,reflect:e,wrapped:h},r){i&&!(this._$Ej??=new Map).has(t)&&(this._$Ej.set(t,r??s??this[t]),true!==h||void 0!==r)||(this._$AL.has(t)||(this.hasUpdated||i||(s=void 0),this._$AL.set(t,s)),true===e&&this._$Em!==t&&(this._$Eq??=new Set).add(t));}async _$EP(){this.isUpdatePending=true;try{await this._$ES;}catch(t){Promise.reject(t);}const t=this.scheduleUpdate();return null!=t&&await t,!this.isUpdatePending}scheduleUpdate(){return this.performUpdate()}performUpdate(){if(!this.isUpdatePending)return;if(!this.hasUpdated){if(this.renderRoot??=this.createRenderRoot(),this._$Ep){for(const[t,s]of this._$Ep)this[t]=s;this._$Ep=void 0;}const t=this.constructor.elementProperties;if(t.size>0)for(const[s,i]of t){const{wrapped:t}=i,e=this[s];true!==t||this._$AL.has(s)||void 0===e||this.C(s,void 0,i,e);}}let t=false;const s=this._$AL;try{t=this.shouldUpdate(s),t?(this.willUpdate(s),this._$EO?.forEach(t=>t.hostUpdate?.()),this.update(s)):this._$EM();}catch(s){throw t=false,this._$EM(),s}t&&this._$AE(s);}willUpdate(t){}_$AE(t){this._$EO?.forEach(t=>t.hostUpdated?.()),this.hasUpdated||(this.hasUpdated=true,this.firstUpdated(t)),this.updated(t);}_$EM(){this._$AL=new Map,this.isUpdatePending=false;}get updateComplete(){return this.getUpdateComplete()}getUpdateComplete(){return this._$ES}shouldUpdate(t){return  true}update(t){this._$Eq&&=this._$Eq.forEach(t=>this._$ET(t,this[t])),this._$EM();}updated(t){}firstUpdated(t){}};y$1.elementStyles=[],y$1.shadowRootOptions={mode:"open"},y$1[d$1("elementProperties")]=new Map,y$1[d$1("finalized")]=new Map,p$1?.({ReactiveElement:y$1}),(a$1.reactiveElementVersions??=[]).push("2.1.2");
+ */const{is:i$2,defineProperty:e$3,getOwnPropertyDescriptor:h$1,getOwnPropertyNames:r$3,getOwnPropertySymbols:o$3,getPrototypeOf:n$2}=Object,a$1=globalThis,c$1=a$1.trustedTypes,l$1=c$1?c$1.emptyScript:"",p$1=a$1.reactiveElementPolyfillSupport,d$1=(t,s)=>t,u$1={toAttribute(t,s){switch(s){case Boolean:t=t?l$1:null;break;case Object:case Array:t=null==t?t:JSON.stringify(t);}return t},fromAttribute(t,s){let i=t;switch(s){case Boolean:i=null!==t;break;case Number:i=null===t?null:Number(t);break;case Object:case Array:try{i=JSON.parse(t);}catch(t){i=null;}}return i}},f$1=(t,s)=>!i$2(t,s),b$1={attribute:true,type:String,converter:u$1,reflect:false,useDefault:false,hasChanged:f$1};Symbol.metadata??=Symbol("metadata"),a$1.litPropertyMetadata??=new WeakMap;let y$1 = class y extends HTMLElement{static addInitializer(t){this._$Ei(),(this.l??=[]).push(t);}static get observedAttributes(){return this.finalize(),this._$Eh&&[...this._$Eh.keys()]}static createProperty(t,s=b$1){if(s.state&&(s.attribute=false),this._$Ei(),this.prototype.hasOwnProperty(t)&&((s=Object.create(s)).wrapped=true),this.elementProperties.set(t,s),!s.noAccessor){const i=Symbol(),h=this.getPropertyDescriptor(t,i,s);void 0!==h&&e$3(this.prototype,t,h);}}static getPropertyDescriptor(t,s,i){const{get:e,set:r}=h$1(this.prototype,t)??{get(){return this[s]},set(t){this[s]=t;}};return {get:e,set(s){const h=e?.call(this);r?.call(this,s),this.requestUpdate(t,h,i);},configurable:true,enumerable:true}}static getPropertyOptions(t){return this.elementProperties.get(t)??b$1}static _$Ei(){if(this.hasOwnProperty(d$1("elementProperties")))return;const t=n$2(this);t.finalize(),void 0!==t.l&&(this.l=[...t.l]),this.elementProperties=new Map(t.elementProperties);}static finalize(){if(this.hasOwnProperty(d$1("finalized")))return;if(this.finalized=true,this._$Ei(),this.hasOwnProperty(d$1("properties"))){const t=this.properties,s=[...r$3(t),...o$3(t)];for(const i of s)this.createProperty(i,t[i]);}const t=this[Symbol.metadata];if(null!==t){const s=litPropertyMetadata.get(t);if(void 0!==s)for(const[t,i]of s)this.elementProperties.set(t,i);}this._$Eh=new Map;for(const[t,s]of this.elementProperties){const i=this._$Eu(t,s);void 0!==i&&this._$Eh.set(i,t);}this.elementStyles=this.finalizeStyles(this.styles);}static finalizeStyles(s){const i=[];if(Array.isArray(s)){const e=new Set(s.flat(1/0).reverse());for(const s of e)i.unshift(c$2(s));}else void 0!==s&&i.push(c$2(s));return i}static _$Eu(t,s){const i=s.attribute;return  false===i?void 0:"string"==typeof i?i:"string"==typeof t?t.toLowerCase():void 0}constructor(){super(),this._$Ep=void 0,this.isUpdatePending=false,this.hasUpdated=false,this._$Em=null,this._$Ev();}_$Ev(){this._$ES=new Promise(t=>this.enableUpdating=t),this._$AL=new Map,this._$E_(),this.requestUpdate(),this.constructor.l?.forEach(t=>t(this));}addController(t){(this._$EO??=new Set).add(t),void 0!==this.renderRoot&&this.isConnected&&t.hostConnected?.();}removeController(t){this._$EO?.delete(t);}_$E_(){const t=new Map,s=this.constructor.elementProperties;for(const i of s.keys())this.hasOwnProperty(i)&&(t.set(i,this[i]),delete this[i]);t.size>0&&(this._$Ep=t);}createRenderRoot(){const t=this.shadowRoot??this.attachShadow(this.constructor.shadowRootOptions);return S$1(t,this.constructor.elementStyles),t}connectedCallback(){this.renderRoot??=this.createRenderRoot(),this.enableUpdating(true),this._$EO?.forEach(t=>t.hostConnected?.());}enableUpdating(t){}disconnectedCallback(){this._$EO?.forEach(t=>t.hostDisconnected?.());}attributeChangedCallback(t,s,i){this._$AK(t,i);}_$ET(t,s){const i=this.constructor.elementProperties.get(t),e=this.constructor._$Eu(t,i);if(void 0!==e&&true===i.reflect){const h=(void 0!==i.converter?.toAttribute?i.converter:u$1).toAttribute(s,i.type);this._$Em=t,null==h?this.removeAttribute(e):this.setAttribute(e,h),this._$Em=null;}}_$AK(t,s){const i=this.constructor,e=i._$Eh.get(t);if(void 0!==e&&this._$Em!==e){const t=i.getPropertyOptions(e),h="function"==typeof t.converter?{fromAttribute:t.converter}:void 0!==t.converter?.fromAttribute?t.converter:u$1;this._$Em=e;const r=h.fromAttribute(s,t.type);this[e]=r??this._$Ej?.get(e)??r,this._$Em=null;}}requestUpdate(t,s,i,e=false,h){if(void 0!==t){const r=this.constructor;if(false===e&&(h=this[t]),i??=r.getPropertyOptions(t),!((i.hasChanged??f$1)(h,s)||i.useDefault&&i.reflect&&h===this._$Ej?.get(t)&&!this.hasAttribute(r._$Eu(t,i))))return;this.C(t,s,i);} false===this.isUpdatePending&&(this._$ES=this._$EP());}C(t,s,{useDefault:i,reflect:e,wrapped:h},r){i&&!(this._$Ej??=new Map).has(t)&&(this._$Ej.set(t,r??s??this[t]),true!==h||void 0!==r)||(this._$AL.has(t)||(this.hasUpdated||i||(s=void 0),this._$AL.set(t,s)),true===e&&this._$Em!==t&&(this._$Eq??=new Set).add(t));}async _$EP(){this.isUpdatePending=true;try{await this._$ES;}catch(t){Promise.reject(t);}const t=this.scheduleUpdate();return null!=t&&await t,!this.isUpdatePending}scheduleUpdate(){return this.performUpdate()}performUpdate(){if(!this.isUpdatePending)return;if(!this.hasUpdated){if(this.renderRoot??=this.createRenderRoot(),this._$Ep){for(const[t,s]of this._$Ep)this[t]=s;this._$Ep=void 0;}const t=this.constructor.elementProperties;if(t.size>0)for(const[s,i]of t){const{wrapped:t}=i,e=this[s];true!==t||this._$AL.has(s)||void 0===e||this.C(s,void 0,i,e);}}let t=false;const s=this._$AL;try{t=this.shouldUpdate(s),t?(this.willUpdate(s),this._$EO?.forEach(t=>t.hostUpdate?.()),this.update(s)):this._$EM();}catch(s){throw t=false,this._$EM(),s}t&&this._$AE(s);}willUpdate(t){}_$AE(t){this._$EO?.forEach(t=>t.hostUpdated?.()),this.hasUpdated||(this.hasUpdated=true,this.firstUpdated(t)),this.updated(t);}_$EM(){this._$AL=new Map,this.isUpdatePending=false;}get updateComplete(){return this.getUpdateComplete()}getUpdateComplete(){return this._$ES}shouldUpdate(t){return  true}update(t){this._$Eq&&=this._$Eq.forEach(t=>this._$ET(t,this[t])),this._$EM();}updated(t){}firstUpdated(t){}};y$1.elementStyles=[],y$1.shadowRootOptions={mode:"open"},y$1[d$1("elementProperties")]=new Map,y$1[d$1("finalized")]=new Map,p$1?.({ReactiveElement:y$1}),(a$1.reactiveElementVersions??=[]).push("2.1.2");
 
 /**
  * @license
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */
-const t$1=globalThis,i$1=t=>t,s$1=t$1.trustedTypes,e=s$1?s$1.createPolicy("lit-html",{createHTML:t=>t}):void 0,h="$lit$",o$2=`lit$${Math.random().toFixed(9).slice(2)}$`,n$1="?"+o$2,r$2=`<${n$1}>`,l=document,c=()=>l.createComment(""),a=t=>null===t||"object"!=typeof t&&"function"!=typeof t,u=Array.isArray,d=t=>u(t)||"function"==typeof t?.[Symbol.iterator],f="[ \t\n\f\r]",v=/<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g,_=/-->/g,m=/>/g,p=RegExp(`>|${f}(?:([^\\s"'>=/]+)(${f}*=${f}*(?:[^ \t\n\f\r"'\`<>=]|("|')|))|$)`,"g"),g=/'/g,$=/"/g,y=/^(?:script|style|textarea|title)$/i,x=t=>(i,...s)=>({_$litType$:t,strings:i,values:s}),b=x(1),E=Symbol.for("lit-noChange"),A=Symbol.for("lit-nothing"),C=new WeakMap,P=l.createTreeWalker(l,129);function V(t,i){if(!u(t)||!t.hasOwnProperty("raw"))throw Error("invalid template strings array");return void 0!==e?e.createHTML(i):i}const N=(t,i)=>{const s=t.length-1,e=[];let n,l=2===i?"<svg>":3===i?"<math>":"",c=v;for(let i=0;i<s;i++){const s=t[i];let a,u,d=-1,f=0;for(;f<s.length&&(c.lastIndex=f,u=c.exec(s),null!==u);)f=c.lastIndex,c===v?"!--"===u[1]?c=_:void 0!==u[1]?c=m:void 0!==u[2]?(y.test(u[2])&&(n=RegExp("</"+u[2],"g")),c=p):void 0!==u[3]&&(c=p):c===p?">"===u[0]?(c=n??v,d=-1):void 0===u[1]?d=-2:(d=c.lastIndex-u[2].length,a=u[1],c=void 0===u[3]?p:'"'===u[3]?$:g):c===$||c===g?c=p:c===_||c===m?c=v:(c=p,n=void 0);const x=c===p&&t[i+1].startsWith("/>")?" ":"";l+=c===v?s+r$2:d>=0?(e.push(a),s.slice(0,d)+h+s.slice(d)+o$2+x):s+o$2+(-2===d?i:x);}return [V(t,l+(t[s]||"<?>")+(2===i?"</svg>":3===i?"</math>":"")),e]};class S{constructor({strings:t,_$litType$:i},e){let r;this.parts=[];let l=0,a=0;const u=t.length-1,d=this.parts,[f,v]=N(t,i);if(this.el=S.createElement(f,e),P.currentNode=this.el.content,2===i||3===i){const t=this.el.content.firstChild;t.replaceWith(...t.childNodes);}for(;null!==(r=P.nextNode())&&d.length<u;){if(1===r.nodeType){if(r.hasAttributes())for(const t of r.getAttributeNames())if(t.endsWith(h)){const i=v[a++],s=r.getAttribute(t).split(o$2),e=/([.?@])?(.*)/.exec(i);d.push({type:1,index:l,name:e[2],strings:s,ctor:"."===e[1]?I:"?"===e[1]?L:"@"===e[1]?z:H}),r.removeAttribute(t);}else t.startsWith(o$2)&&(d.push({type:6,index:l}),r.removeAttribute(t));if(y.test(r.tagName)){const t=r.textContent.split(o$2),i=t.length-1;if(i>0){r.textContent=s$1?s$1.emptyScript:"";for(let s=0;s<i;s++)r.append(t[s],c()),P.nextNode(),d.push({type:2,index:++l});r.append(t[i],c());}}}else if(8===r.nodeType)if(r.data===n$1)d.push({type:2,index:l});else {let t=-1;for(;-1!==(t=r.data.indexOf(o$2,t+1));)d.push({type:7,index:l}),t+=o$2.length-1;}l++;}}static createElement(t,i){const s=l.createElement("template");return s.innerHTML=t,s}}function M(t,i,s=t,e){if(i===E)return i;let h=void 0!==e?s._$Co?.[e]:s._$Cl;const o=a(i)?void 0:i._$litDirective$;return h?.constructor!==o&&(h?._$AO?.(false),void 0===o?h=void 0:(h=new o(t),h._$AT(t,s,e)),void 0!==e?(s._$Co??=[])[e]=h:s._$Cl=h),void 0!==h&&(i=M(t,h._$AS(t,i.values),h,e)),i}class R{constructor(t,i){this._$AV=[],this._$AN=void 0,this._$AD=t,this._$AM=i;}get parentNode(){return this._$AM.parentNode}get _$AU(){return this._$AM._$AU}u(t){const{el:{content:i},parts:s}=this._$AD,e=(t?.creationScope??l).importNode(i,true);P.currentNode=e;let h=P.nextNode(),o=0,n=0,r=s[0];for(;void 0!==r;){if(o===r.index){let i;2===r.type?i=new k(h,h.nextSibling,this,t):1===r.type?i=new r.ctor(h,r.name,r.strings,this,t):6===r.type&&(i=new Z(h,this,t)),this._$AV.push(i),r=s[++n];}o!==r?.index&&(h=P.nextNode(),o++);}return P.currentNode=l,e}p(t){let i=0;for(const s of this._$AV) void 0!==s&&(void 0!==s.strings?(s._$AI(t,s,i),i+=s.strings.length-2):s._$AI(t[i])),i++;}}class k{get _$AU(){return this._$AM?._$AU??this._$Cv}constructor(t,i,s,e){this.type=2,this._$AH=A,this._$AN=void 0,this._$AA=t,this._$AB=i,this._$AM=s,this.options=e,this._$Cv=e?.isConnected??true;}get parentNode(){let t=this._$AA.parentNode;const i=this._$AM;return void 0!==i&&11===t?.nodeType&&(t=i.parentNode),t}get startNode(){return this._$AA}get endNode(){return this._$AB}_$AI(t,i=this){t=M(this,t,i),a(t)?t===A||null==t||""===t?(this._$AH!==A&&this._$AR(),this._$AH=A):t!==this._$AH&&t!==E&&this._(t):void 0!==t._$litType$?this.$(t):void 0!==t.nodeType?this.T(t):d(t)?this.k(t):this._(t);}O(t){return this._$AA.parentNode.insertBefore(t,this._$AB)}T(t){this._$AH!==t&&(this._$AR(),this._$AH=this.O(t));}_(t){this._$AH!==A&&a(this._$AH)?this._$AA.nextSibling.data=t:this.T(l.createTextNode(t)),this._$AH=t;}$(t){const{values:i,_$litType$:s}=t,e="number"==typeof s?this._$AC(t):(void 0===s.el&&(s.el=S.createElement(V(s.h,s.h[0]),this.options)),s);if(this._$AH?._$AD===e)this._$AH.p(i);else {const t=new R(e,this),s=t.u(this.options);t.p(i),this.T(s),this._$AH=t;}}_$AC(t){let i=C.get(t.strings);return void 0===i&&C.set(t.strings,i=new S(t)),i}k(t){u(this._$AH)||(this._$AH=[],this._$AR());const i=this._$AH;let s,e=0;for(const h of t)e===i.length?i.push(s=new k(this.O(c()),this.O(c()),this,this.options)):s=i[e],s._$AI(h),e++;e<i.length&&(this._$AR(s&&s._$AB.nextSibling,e),i.length=e);}_$AR(t=this._$AA.nextSibling,s){for(this._$AP?.(false,true,s);t!==this._$AB;){const s=i$1(t).nextSibling;i$1(t).remove(),t=s;}}setConnected(t){ void 0===this._$AM&&(this._$Cv=t,this._$AP?.(t));}}class H{get tagName(){return this.element.tagName}get _$AU(){return this._$AM._$AU}constructor(t,i,s,e,h){this.type=1,this._$AH=A,this._$AN=void 0,this.element=t,this.name=i,this._$AM=e,this.options=h,s.length>2||""!==s[0]||""!==s[1]?(this._$AH=Array(s.length-1).fill(new String),this.strings=s):this._$AH=A;}_$AI(t,i=this,s,e){const h=this.strings;let o=false;if(void 0===h)t=M(this,t,i,0),o=!a(t)||t!==this._$AH&&t!==E,o&&(this._$AH=t);else {const e=t;let n,r;for(t=h[0],n=0;n<h.length-1;n++)r=M(this,e[s+n],i,n),r===E&&(r=this._$AH[n]),o||=!a(r)||r!==this._$AH[n],r===A?t=A:t!==A&&(t+=(r??"")+h[n+1]),this._$AH[n]=r;}o&&!e&&this.j(t);}j(t){t===A?this.element.removeAttribute(this.name):this.element.setAttribute(this.name,t??"");}}class I extends H{constructor(){super(...arguments),this.type=3;}j(t){this.element[this.name]=t===A?void 0:t;}}class L extends H{constructor(){super(...arguments),this.type=4;}j(t){this.element.toggleAttribute(this.name,!!t&&t!==A);}}class z extends H{constructor(t,i,s,e,h){super(t,i,s,e,h),this.type=5;}_$AI(t,i=this){if((t=M(this,t,i,0)??A)===E)return;const s=this._$AH,e=t===A&&s!==A||t.capture!==s.capture||t.once!==s.once||t.passive!==s.passive,h=t!==A&&(s===A||e);e&&this.element.removeEventListener(this.name,this,s),h&&this.element.addEventListener(this.name,this,t),this._$AH=t;}handleEvent(t){"function"==typeof this._$AH?this._$AH.call(this.options?.host??this.element,t):this._$AH.handleEvent(t);}}class Z{constructor(t,i,s){this.element=t,this.type=6,this._$AN=void 0,this._$AM=i,this.options=s;}get _$AU(){return this._$AM._$AU}_$AI(t){M(this,t);}}const B=t$1.litHtmlPolyfillSupport;B?.(S,k),(t$1.litHtmlVersions??=[]).push("3.3.3");const D=(t,i,s)=>{const e=s?.renderBefore??i;let h=e._$litPart$;if(void 0===h){const t=s?.renderBefore??null;e._$litPart$=h=new k(i.insertBefore(c(),t),t,void 0,s??{});}return h._$AI(t),h};
+const t$1=globalThis,i$1=t=>t,s$1=t$1.trustedTypes,e$2=s$1?s$1.createPolicy("lit-html",{createHTML:t=>t}):void 0,h="$lit$",o$2=`lit$${Math.random().toFixed(9).slice(2)}$`,n$1="?"+o$2,r$2=`<${n$1}>`,l=document,c=()=>l.createComment(""),a=t=>null===t||"object"!=typeof t&&"function"!=typeof t,u=Array.isArray,d=t=>u(t)||"function"==typeof t?.[Symbol.iterator],f="[ \t\n\f\r]",v=/<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g,_=/-->/g,m=/>/g,p=RegExp(`>|${f}(?:([^\\s"'>=/]+)(${f}*=${f}*(?:[^ \t\n\f\r"'\`<>=]|("|')|))|$)`,"g"),g=/'/g,$=/"/g,y=/^(?:script|style|textarea|title)$/i,x=t=>(i,...s)=>({_$litType$:t,strings:i,values:s}),b=x(1),E=Symbol.for("lit-noChange"),A=Symbol.for("lit-nothing"),C=new WeakMap,P=l.createTreeWalker(l,129);function V(t,i){if(!u(t)||!t.hasOwnProperty("raw"))throw Error("invalid template strings array");return void 0!==e$2?e$2.createHTML(i):i}const N=(t,i)=>{const s=t.length-1,e=[];let n,l=2===i?"<svg>":3===i?"<math>":"",c=v;for(let i=0;i<s;i++){const s=t[i];let a,u,d=-1,f=0;for(;f<s.length&&(c.lastIndex=f,u=c.exec(s),null!==u);)f=c.lastIndex,c===v?"!--"===u[1]?c=_:void 0!==u[1]?c=m:void 0!==u[2]?(y.test(u[2])&&(n=RegExp("</"+u[2],"g")),c=p):void 0!==u[3]&&(c=p):c===p?">"===u[0]?(c=n??v,d=-1):void 0===u[1]?d=-2:(d=c.lastIndex-u[2].length,a=u[1],c=void 0===u[3]?p:'"'===u[3]?$:g):c===$||c===g?c=p:c===_||c===m?c=v:(c=p,n=void 0);const x=c===p&&t[i+1].startsWith("/>")?" ":"";l+=c===v?s+r$2:d>=0?(e.push(a),s.slice(0,d)+h+s.slice(d)+o$2+x):s+o$2+(-2===d?i:x);}return [V(t,l+(t[s]||"<?>")+(2===i?"</svg>":3===i?"</math>":"")),e]};class S{constructor({strings:t,_$litType$:i},e){let r;this.parts=[];let l=0,a=0;const u=t.length-1,d=this.parts,[f,v]=N(t,i);if(this.el=S.createElement(f,e),P.currentNode=this.el.content,2===i||3===i){const t=this.el.content.firstChild;t.replaceWith(...t.childNodes);}for(;null!==(r=P.nextNode())&&d.length<u;){if(1===r.nodeType){if(r.hasAttributes())for(const t of r.getAttributeNames())if(t.endsWith(h)){const i=v[a++],s=r.getAttribute(t).split(o$2),e=/([.?@])?(.*)/.exec(i);d.push({type:1,index:l,name:e[2],strings:s,ctor:"."===e[1]?I:"?"===e[1]?L:"@"===e[1]?z:H}),r.removeAttribute(t);}else t.startsWith(o$2)&&(d.push({type:6,index:l}),r.removeAttribute(t));if(y.test(r.tagName)){const t=r.textContent.split(o$2),i=t.length-1;if(i>0){r.textContent=s$1?s$1.emptyScript:"";for(let s=0;s<i;s++)r.append(t[s],c()),P.nextNode(),d.push({type:2,index:++l});r.append(t[i],c());}}}else if(8===r.nodeType)if(r.data===n$1)d.push({type:2,index:l});else {let t=-1;for(;-1!==(t=r.data.indexOf(o$2,t+1));)d.push({type:7,index:l}),t+=o$2.length-1;}l++;}}static createElement(t,i){const s=l.createElement("template");return s.innerHTML=t,s}}function M(t,i,s=t,e){if(i===E)return i;let h=void 0!==e?s._$Co?.[e]:s._$Cl;const o=a(i)?void 0:i._$litDirective$;return h?.constructor!==o&&(h?._$AO?.(false),void 0===o?h=void 0:(h=new o(t),h._$AT(t,s,e)),void 0!==e?(s._$Co??=[])[e]=h:s._$Cl=h),void 0!==h&&(i=M(t,h._$AS(t,i.values),h,e)),i}class R{constructor(t,i){this._$AV=[],this._$AN=void 0,this._$AD=t,this._$AM=i;}get parentNode(){return this._$AM.parentNode}get _$AU(){return this._$AM._$AU}u(t){const{el:{content:i},parts:s}=this._$AD,e=(t?.creationScope??l).importNode(i,true);P.currentNode=e;let h=P.nextNode(),o=0,n=0,r=s[0];for(;void 0!==r;){if(o===r.index){let i;2===r.type?i=new k(h,h.nextSibling,this,t):1===r.type?i=new r.ctor(h,r.name,r.strings,this,t):6===r.type&&(i=new Z(h,this,t)),this._$AV.push(i),r=s[++n];}o!==r?.index&&(h=P.nextNode(),o++);}return P.currentNode=l,e}p(t){let i=0;for(const s of this._$AV) void 0!==s&&(void 0!==s.strings?(s._$AI(t,s,i),i+=s.strings.length-2):s._$AI(t[i])),i++;}}class k{get _$AU(){return this._$AM?._$AU??this._$Cv}constructor(t,i,s,e){this.type=2,this._$AH=A,this._$AN=void 0,this._$AA=t,this._$AB=i,this._$AM=s,this.options=e,this._$Cv=e?.isConnected??true;}get parentNode(){let t=this._$AA.parentNode;const i=this._$AM;return void 0!==i&&11===t?.nodeType&&(t=i.parentNode),t}get startNode(){return this._$AA}get endNode(){return this._$AB}_$AI(t,i=this){t=M(this,t,i),a(t)?t===A||null==t||""===t?(this._$AH!==A&&this._$AR(),this._$AH=A):t!==this._$AH&&t!==E&&this._(t):void 0!==t._$litType$?this.$(t):void 0!==t.nodeType?this.T(t):d(t)?this.k(t):this._(t);}O(t){return this._$AA.parentNode.insertBefore(t,this._$AB)}T(t){this._$AH!==t&&(this._$AR(),this._$AH=this.O(t));}_(t){this._$AH!==A&&a(this._$AH)?this._$AA.nextSibling.data=t:this.T(l.createTextNode(t)),this._$AH=t;}$(t){const{values:i,_$litType$:s}=t,e="number"==typeof s?this._$AC(t):(void 0===s.el&&(s.el=S.createElement(V(s.h,s.h[0]),this.options)),s);if(this._$AH?._$AD===e)this._$AH.p(i);else {const t=new R(e,this),s=t.u(this.options);t.p(i),this.T(s),this._$AH=t;}}_$AC(t){let i=C.get(t.strings);return void 0===i&&C.set(t.strings,i=new S(t)),i}k(t){u(this._$AH)||(this._$AH=[],this._$AR());const i=this._$AH;let s,e=0;for(const h of t)e===i.length?i.push(s=new k(this.O(c()),this.O(c()),this,this.options)):s=i[e],s._$AI(h),e++;e<i.length&&(this._$AR(s&&s._$AB.nextSibling,e),i.length=e);}_$AR(t=this._$AA.nextSibling,s){for(this._$AP?.(false,true,s);t!==this._$AB;){const s=i$1(t).nextSibling;i$1(t).remove(),t=s;}}setConnected(t){ void 0===this._$AM&&(this._$Cv=t,this._$AP?.(t));}}class H{get tagName(){return this.element.tagName}get _$AU(){return this._$AM._$AU}constructor(t,i,s,e,h){this.type=1,this._$AH=A,this._$AN=void 0,this.element=t,this.name=i,this._$AM=e,this.options=h,s.length>2||""!==s[0]||""!==s[1]?(this._$AH=Array(s.length-1).fill(new String),this.strings=s):this._$AH=A;}_$AI(t,i=this,s,e){const h=this.strings;let o=false;if(void 0===h)t=M(this,t,i,0),o=!a(t)||t!==this._$AH&&t!==E,o&&(this._$AH=t);else {const e=t;let n,r;for(t=h[0],n=0;n<h.length-1;n++)r=M(this,e[s+n],i,n),r===E&&(r=this._$AH[n]),o||=!a(r)||r!==this._$AH[n],r===A?t=A:t!==A&&(t+=(r??"")+h[n+1]),this._$AH[n]=r;}o&&!e&&this.j(t);}j(t){t===A?this.element.removeAttribute(this.name):this.element.setAttribute(this.name,t??"");}}class I extends H{constructor(){super(...arguments),this.type=3;}j(t){this.element[this.name]=t===A?void 0:t;}}class L extends H{constructor(){super(...arguments),this.type=4;}j(t){this.element.toggleAttribute(this.name,!!t&&t!==A);}}class z extends H{constructor(t,i,s,e,h){super(t,i,s,e,h),this.type=5;}_$AI(t,i=this){if((t=M(this,t,i,0)??A)===E)return;const s=this._$AH,e=t===A&&s!==A||t.capture!==s.capture||t.once!==s.once||t.passive!==s.passive,h=t!==A&&(s===A||e);e&&this.element.removeEventListener(this.name,this,s),h&&this.element.addEventListener(this.name,this,t),this._$AH=t;}handleEvent(t){"function"==typeof this._$AH?this._$AH.call(this.options?.host??this.element,t):this._$AH.handleEvent(t);}}class Z{constructor(t,i,s){this.element=t,this.type=6,this._$AN=void 0,this._$AM=i,this.options=s;}get _$AU(){return this._$AM._$AU}_$AI(t){M(this,t);}}const B=t$1.litHtmlPolyfillSupport;B?.(S,k),(t$1.litHtmlVersions??=[]).push("3.3.3");const D=(t,i,s)=>{const e=s?.renderBefore??i;let h=e._$litPart$;if(void 0===h){const t=s?.renderBefore??null;e._$litPart$=h=new k(i.insertBefore(c(),t),t,void 0,s??{});}return h._$AI(t),h};
 
 /**
  * @license
@@ -71,6 +71,19 @@ const t=t=>(e,o)=>{ void 0!==o?o.addInitializer(()=>{customElements.define(t,e);
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */function r(r){return n({...r,state:true,attribute:false})}
+
+/**
+ * @license
+ * Copyright 2017 Google LLC
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+const e$1=(e,t,c)=>(c.configurable=true,c.enumerable=true,Reflect.decorate&&"object"!=typeof t&&Object.defineProperty(e,t,c),c);
+
+/**
+ * @license
+ * Copyright 2017 Google LLC
+ * SPDX-License-Identifier: BSD-3-Clause
+ */function e(e,r){return (n,s,i)=>{const o=t=>t.renderRoot?.querySelector(e)??null;return e$1(n,s,{get(){return o(this)}})}}
 
 const STATUS_META = {
     created: { icon: "mdi:package-variant-closed", color: "var(--disabled-text-color)" },
@@ -109,6 +122,278 @@ function globalCounterColor(translationKey) {
     return GLOBAL_COUNTER_COLORS[translationKey] ?? "var(--disabled-text-color)";
 }
 
+// Mirrors ALL_CARRIERS / CARRIER_LABELS in the parcel_tracker integration's const.py.
+const CARRIERS = [
+    { value: "laposte", label: "La Poste" },
+    { value: "fedex", label: "FedEx" },
+    { value: "dhl", label: "DHL" },
+    { value: "ups", label: "UPS" },
+    { value: "mondial_relay", label: "Mondial Relay" },
+];
+
+const DOMAIN = "parcel_tracker";
+// add/update (when tracking_number or carrier change) trigger a synchronous
+// carrier lookup on the backend, but a bad tracking number doesn't reject the
+// service call — it's reported asynchronously via the parcel_error event
+// instead. Give it a few seconds to show up before assuming success.
+const ERROR_LISTEN_MS = 5000;
+let ParcelTrackerUpsertDialog = class ParcelTrackerUpsertDialog extends i {
+    constructor() {
+        super(...arguments);
+        this._open = false;
+        this._parcelId = null;
+        this._trackingNumber = "";
+        this._carrier = CARRIERS[0].value;
+        this._name = "";
+        this._notes = "";
+        this._submitting = false;
+        this._error = null;
+        this._originalTrackingNumber = "";
+        this._originalCarrier = CARRIERS[0].value;
+        this._unsubscribeError = null;
+    }
+    openForAdd() {
+        this._parcelId = null;
+        this._trackingNumber = "";
+        this._originalTrackingNumber = "";
+        this._carrier = CARRIERS[0].value;
+        this._originalCarrier = CARRIERS[0].value;
+        this._name = "";
+        this._notes = "";
+        this._error = null;
+        this._open = true;
+    }
+    openForEdit(target) {
+        this._parcelId = target.parcelId;
+        this._trackingNumber = target.trackingNumber;
+        this._originalTrackingNumber = target.trackingNumber;
+        this._carrier = target.carrier;
+        this._originalCarrier = target.carrier;
+        this._name = target.name;
+        this._notes = target.notes;
+        this._error = null;
+        this._open = true;
+    }
+    disconnectedCallback() {
+        super.disconnectedCallback();
+        this._cleanupErrorListener();
+    }
+    _cleanupErrorListener() {
+        if (this._errorTimeout !== undefined) {
+            window.clearTimeout(this._errorTimeout);
+            this._errorTimeout = undefined;
+        }
+        this._unsubscribeError?.();
+        this._unsubscribeError = null;
+    }
+    _close() {
+        this._open = false;
+        this._submitting = false;
+        this._cleanupErrorListener();
+    }
+    async _submit() {
+        if (this._submitting)
+            return;
+        if (!this._trackingNumber.trim()) {
+            this._error = "Le numéro de suivi est requis.";
+            return;
+        }
+        if (!this.hass)
+            return;
+        this._submitting = true;
+        this._error = null;
+        const isEdit = this._parcelId !== null;
+        const willRefresh = !isEdit ||
+            this._trackingNumber !== this._originalTrackingNumber ||
+            this._carrier !== this._originalCarrier;
+        try {
+            if (isEdit) {
+                await this.hass.callService(DOMAIN, "update", {
+                    parcel_id: this._parcelId,
+                    tracking_number: this._trackingNumber,
+                    carrier: this._carrier,
+                    name: this._name,
+                    notes: this._notes,
+                });
+            }
+            else {
+                await this.hass.callService(DOMAIN, "add", {
+                    tracking_number: this._trackingNumber,
+                    carrier: this._carrier,
+                    name: this._name,
+                    notes: this._notes,
+                });
+            }
+        }
+        catch (err) {
+            this._submitting = false;
+            this._error = err instanceof Error ? err.message : String(err);
+            return;
+        }
+        if (!willRefresh) {
+            this._close();
+            return;
+        }
+        this._waitForErrorThenClose();
+    }
+    _waitForErrorThenClose() {
+        const trackingNumber = this._trackingNumber;
+        let settled = false;
+        const onSettled = () => {
+            if (settled)
+                return;
+            settled = true;
+            this._cleanupErrorListener();
+        };
+        this.hass.connection
+            .subscribeEvents((event) => {
+            if (event.data.tracking_number !== trackingNumber)
+                return;
+            this._submitting = false;
+            this._error = event.data.error ?? "Erreur lors du suivi de ce colis.";
+            onSettled();
+        }, "parcel_error")
+            .then((unsubscribe) => {
+            if (settled) {
+                unsubscribe();
+                return;
+            }
+            this._unsubscribeError = unsubscribe;
+        });
+        this._errorTimeout = window.setTimeout(() => {
+            if (settled)
+                return;
+            onSettled();
+            this._close();
+        }, ERROR_LISTEN_MS);
+    }
+    _renderField(id, label, value, onInput, required = false) {
+        return b `<div class="field">
+      <label for=${id}>${label}${required ? " *" : ""}</label>
+      <input
+        id=${id}
+        .value=${value}
+        ?required=${required}
+        @input=${(ev) => onInput(ev.target.value)}
+      />
+    </div>`;
+    }
+    render() {
+        const isEdit = this._parcelId !== null;
+        return b `<ha-dialog
+      .open=${this._open}
+      .heading=${isEdit ? "Modifier le colis" : "Ajouter un colis"}
+      @closed=${() => this._close()}
+    >
+      <div class="fields">
+        ${this._renderField("tracking_number", "Numéro de suivi", this._trackingNumber, (v) => (this._trackingNumber = v), true)}
+        <div class="field">
+          <label for="carrier">Transporteur</label>
+          <select
+            id="carrier"
+            .value=${this._carrier}
+            @change=${(ev) => (this._carrier = ev.target.value)}
+          >
+            ${CARRIERS.map((carrier) => b `<option value=${carrier.value} ?selected=${carrier.value === this._carrier}>
+                  ${carrier.label}
+                </option>`)}
+          </select>
+        </div>
+        ${this._renderField("name", "Nom", this._name, (v) => (this._name = v))}
+        ${this._renderField("notes", "Notes", this._notes, (v) => (this._notes = v))}
+        ${this._error ? b `<p class="error">${this._error}</p>` : A}
+      </div>
+      <button slot="secondaryAction" ?disabled=${this._submitting} @click=${() => this._close()}>
+        Annuler
+      </button>
+      <button slot="primaryAction" ?disabled=${this._submitting} @click=${() => this._submit()}>
+        ${this._submitting ? "…" : isEdit ? "Enregistrer" : "Ajouter"}
+      </button>
+    </ha-dialog>`;
+    }
+};
+ParcelTrackerUpsertDialog.styles = i$3 `
+    .fields {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-width: 280px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    label {
+      font-size: 0.85em;
+      color: var(--secondary-text-color);
+    }
+
+    input,
+    select {
+      font: inherit;
+      color: var(--primary-text-color);
+      background: var(--card-background-color, #fff);
+      border: 1px solid var(--divider-color, #ccc);
+      border-radius: 4px;
+      padding: 8px;
+    }
+
+    .error {
+      color: var(--error-color);
+      margin: 0;
+    }
+
+    button[slot="primaryAction"] {
+      color: var(--primary-color);
+    }
+
+    button {
+      font: inherit;
+      background: none;
+      border: none;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+
+    button[disabled] {
+      opacity: 0.5;
+      cursor: default;
+    }
+  `;
+__decorate([
+    n({ attribute: false })
+], ParcelTrackerUpsertDialog.prototype, "hass", void 0);
+__decorate([
+    r()
+], ParcelTrackerUpsertDialog.prototype, "_open", void 0);
+__decorate([
+    r()
+], ParcelTrackerUpsertDialog.prototype, "_parcelId", void 0);
+__decorate([
+    r()
+], ParcelTrackerUpsertDialog.prototype, "_trackingNumber", void 0);
+__decorate([
+    r()
+], ParcelTrackerUpsertDialog.prototype, "_carrier", void 0);
+__decorate([
+    r()
+], ParcelTrackerUpsertDialog.prototype, "_name", void 0);
+__decorate([
+    r()
+], ParcelTrackerUpsertDialog.prototype, "_notes", void 0);
+__decorate([
+    r()
+], ParcelTrackerUpsertDialog.prototype, "_submitting", void 0);
+__decorate([
+    r()
+], ParcelTrackerUpsertDialog.prototype, "_error", void 0);
+ParcelTrackerUpsertDialog = __decorate([
+    t("parcel-tracker-upsert-dialog")
+], ParcelTrackerUpsertDialog);
+
 const PLATFORM = "parcel_tracker";
 const PARCEL_TRANSLATION_KEY = "parcel";
 function fireEvent(target, type, detail) {
@@ -132,8 +417,16 @@ function stripDevicePrefix(name) {
     return name.startsWith(DEVICE_NAME_PREFIX) ? name.slice(DEVICE_NAME_PREFIX.length) : name;
 }
 let ParcelTrackerCard = class ParcelTrackerCard extends i {
+    constructor() {
+        super(...arguments);
+        this._openMenuEntityId = null;
+        this._pendingDelete = null;
+    }
     setConfig(config) {
         this._config = config;
+    }
+    get _editable() {
+        return this._config?.editable ?? true;
     }
     static getStubConfig() {
         return { type: "custom:parcel-tracker-card" };
@@ -194,6 +487,73 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
     _openMoreInfo(entityId) {
         fireEvent(this, "hass-more-info", { entityId });
     }
+    _parcelId(entityId) {
+        return this.hass?.entities[entityId]?.unique_id ?? "";
+    }
+    _toggleMenu(entityId) {
+        this._openMenuEntityId = this._openMenuEntityId === entityId ? null : entityId;
+    }
+    _openAdd() {
+        this._openMenuEntityId = null;
+        this._upsertDialog?.openForAdd();
+    }
+    _openEdit(stateObj) {
+        const attrs = stateObj.attributes;
+        // display_name (and thus friendly_name) falls back to the tracking
+        // number when the parcel has no explicit name — an empty name can't be
+        // told apart from a name that happens to equal the tracking number, but
+        // that's an acceptable edge case for prefilling the edit form.
+        const strippedName = stripDevicePrefix(String(stateObj.attributes.friendly_name ?? ""));
+        const name = strippedName === attrs.tracking_number ? "" : strippedName;
+        this._openMenuEntityId = null;
+        this._upsertDialog?.openForEdit({
+            parcelId: this._parcelId(stateObj.entity_id),
+            trackingNumber: attrs.tracking_number,
+            carrier: attrs.carrier,
+            name,
+            notes: attrs.notes,
+        });
+    }
+    async _archive(stateObj) {
+        this._openMenuEntityId = null;
+        try {
+            await this.hass?.callService(PLATFORM, "archive", {
+                parcel_id: this._parcelId(stateObj.entity_id),
+            });
+        }
+        catch (err) {
+            console.error("parcel_tracker.archive failed", err);
+        }
+    }
+    _confirmDelete(stateObj) {
+        this._openMenuEntityId = null;
+        const name = stripDevicePrefix(String(stateObj.attributes.friendly_name ?? stateObj.entity_id));
+        this._pendingDelete = {
+            entityId: stateObj.entity_id,
+            parcelId: this._parcelId(stateObj.entity_id),
+            name,
+        };
+    }
+    async _confirmedDelete() {
+        const pending = this._pendingDelete;
+        if (!pending)
+            return;
+        this._pendingDelete = null;
+        try {
+            await this.hass?.callService(PLATFORM, "remove", { parcel_id: pending.parcelId });
+        }
+        catch (err) {
+            console.error("parcel_tracker.remove failed", err);
+        }
+    }
+    async _refresh() {
+        try {
+            await this.hass?.callService(PLATFORM, "refresh", {});
+        }
+        catch (err) {
+            console.error("parcel_tracker.refresh failed", err);
+        }
+    }
     _counterLabel(stateObj) {
         const translationKey = this._translationKey(stateObj);
         const localized = this.hass?.localize?.(`component.${PLATFORM}.entity.sensor.${translationKey}.name`);
@@ -235,39 +595,172 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
                 secondary += ` · Depuis ${attrs.days_since_shipping} j.`;
             }
         }
-        return b `<div
-      class="parcel-row"
-      role="button"
-      tabindex="0"
-      @click=${() => this._openMoreInfo(stateObj.entity_id)}
-      @keydown=${(ev) => {
+        const menuOpen = this._openMenuEntityId === stateObj.entity_id;
+        return b `<div class="parcel">
+      <div
+        class="parcel-row"
+        role="button"
+        tabindex="0"
+        @click=${() => this._openMoreInfo(stateObj.entity_id)}
+        @keydown=${(ev) => {
             if (ev.key === "Enter" || ev.key === " ")
                 this._openMoreInfo(stateObj.entity_id);
         }}
-    >
-      <ha-icon icon=${meta.icon} style="color: ${meta.color}"></ha-icon>
-      <div class="parcel-info">
-        <span class="parcel-name">${name}</span>
-        <span class="parcel-secondary">${secondary}</span>
+      >
+        <ha-icon icon=${meta.icon} style="color: ${meta.color}"></ha-icon>
+        <div class="parcel-info">
+          <span class="parcel-name">${name}</span>
+          <span class="parcel-secondary">${secondary}</span>
+        </div>
+        <span class="parcel-status" style="background: ${meta.color}">${this._formatState(stateObj)}</span>
+        ${this._editable
+            ? b `<button
+              class="icon-button"
+              aria-label="Actions"
+              @click=${(ev) => {
+                ev.stopPropagation();
+                this._toggleMenu(stateObj.entity_id);
+            }}
+            >
+              <ha-icon icon="mdi:dots-vertical"></ha-icon>
+            </button>`
+            : A}
       </div>
-      <span class="parcel-status" style="background: ${meta.color}">${this._formatState(stateObj)}</span>
+      ${menuOpen ? this._renderRowActions(stateObj) : A}
+    </div>`;
+    }
+    _renderRowActions(stateObj) {
+        return b `<div class="parcel-actions">
+      <button
+        @click=${(ev) => {
+            ev.stopPropagation();
+            this._openEdit(stateObj);
+        }}
+      >
+        <ha-icon icon="mdi:pencil-outline"></ha-icon>
+        Modifier
+      </button>
+      ${stateObj.state === "delivered"
+            ? b `<button
+            @click=${(ev) => {
+                ev.stopPropagation();
+                this._archive(stateObj);
+            }}
+          >
+            <ha-icon icon="mdi:archive-outline"></ha-icon>
+            Archiver
+          </button>`
+            : A}
+      <button
+        class="danger"
+        @click=${(ev) => {
+            ev.stopPropagation();
+            this._confirmDelete(stateObj);
+        }}
+      >
+        <ha-icon icon="mdi:delete-outline"></ha-icon>
+        Supprimer
+      </button>
     </div>`;
     }
     render() {
         if (!this.hass || !this._config)
             return A;
         const parcels = this._parcelEntities();
-        return b `<ha-card header=${this._config.title ?? "Parcel Tracker"}>
+        const editable = this._editable;
+        return b `<ha-card>
+      <div class="card-header">
+        <div class="name">${this._config.title ?? "Parcel Tracker"}</div>
+        ${editable
+            ? b `<div class="header-actions">
+              <button class="icon-button" title="Rafraîchir" @click=${() => this._refresh()}>
+                <ha-icon icon="mdi:refresh"></ha-icon>
+              </button>
+              <button class="icon-button" title="Ajouter un colis" @click=${() => this._openAdd()}>
+                <ha-icon icon="mdi:plus"></ha-icon>
+              </button>
+            </div>`
+            : A}
+      </div>
       <div class="card-content">
         ${this._renderCounters()}
         ${parcels.length === 0
-            ? b `<div class="empty">Aucun colis suivi.</div>`
+            ? b `<div class="empty">
+              ${editable
+                ? b `<button class="link-button" @click=${() => this._openAdd()}>
+                    Aucun colis suivi. Ajouter un colis.
+                  </button>`
+                : "Aucun colis suivi."}
+            </div>`
             : b `<div class="parcels">${parcels.map((p) => this._renderParcelRow(p))}</div>`}
       </div>
-    </ha-card>`;
+    </ha-card>
+    ${editable ? b `<parcel-tracker-upsert-dialog .hass=${this.hass}></parcel-tracker-upsert-dialog>` : A}
+    ${this._renderDeleteConfirm()}`;
+    }
+    _renderDeleteConfirm() {
+        if (!this._pendingDelete)
+            return A;
+        return b `<ha-dialog
+      open
+      .heading=${"Supprimer ce colis ?"}
+      @closed=${() => (this._pendingDelete = null)}
+    >
+      <p>
+        Supprimer définitivement « ${this._pendingDelete.name} » ? Cette action efface aussi son
+        historique et ne peut pas être annulée.
+      </p>
+      <button slot="secondaryAction" @click=${() => (this._pendingDelete = null)}>Annuler</button>
+      <button class="danger" slot="primaryAction" @click=${() => this._confirmedDelete()}>
+        Supprimer
+      </button>
+    </ha-dialog>`;
     }
 };
 ParcelTrackerCard.styles = i$3 `
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 16px 0;
+      font-size: 1.2em;
+      font-weight: 400;
+      color: var(--ha-card-header-color, var(--primary-text-color));
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 4px;
+    }
+
+    .icon-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: none;
+      background: none;
+      color: var(--secondary-text-color);
+      cursor: pointer;
+    }
+
+    .icon-button:hover {
+      background: var(--secondary-background-color);
+      color: var(--primary-text-color);
+    }
+
+    .link-button {
+      font: inherit;
+      background: none;
+      border: none;
+      padding: 0;
+      color: var(--primary-color);
+      cursor: pointer;
+      text-align: left;
+    }
+
     .card-content {
       padding: 0 0 8px;
     }
@@ -368,6 +861,36 @@ ParcelTrackerCard.styles = i$3 `
       padding: 3px 10px;
       border-radius: 999px;
     }
+
+    .parcel-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      padding: 0 16px 8px 56px;
+    }
+
+    .parcel-actions button {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font: inherit;
+      font-size: 0.85em;
+      background: var(--secondary-background-color);
+      color: var(--primary-text-color);
+      border: none;
+      border-radius: 8px;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+
+    .parcel-actions button ha-icon {
+      --mdc-icon-size: 16px;
+    }
+
+    .parcel-actions button.danger,
+    ha-dialog button.danger {
+      color: var(--error-color);
+    }
   `;
 __decorate([
     n({ attribute: false })
@@ -375,6 +898,15 @@ __decorate([
 __decorate([
     r()
 ], ParcelTrackerCard.prototype, "_config", void 0);
+__decorate([
+    r()
+], ParcelTrackerCard.prototype, "_openMenuEntityId", void 0);
+__decorate([
+    r()
+], ParcelTrackerCard.prototype, "_pendingDelete", void 0);
+__decorate([
+    e("parcel-tracker-upsert-dialog")
+], ParcelTrackerCard.prototype, "_upsertDialog", void 0);
 ParcelTrackerCard = __decorate([
     t("parcel-tracker-card")
 ], ParcelTrackerCard);

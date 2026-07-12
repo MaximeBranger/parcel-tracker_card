@@ -44,7 +44,14 @@ Ajouter la carte à un tableau de bord via l'éditeur de dashboard (**Ajouter un
 type: custom:parcel-tracker-card
 ```
 
-La carte affiche automatiquement les colis actifs exposés par l'intégration `parcel_tracker` (aucune configuration d'entité n'est requise).
+La carte affiche automatiquement les colis actifs exposés par l'intégration `parcel_tracker` (aucune configuration d'entité n'est requise). Elle permet aussi d'ajouter, modifier, archiver et supprimer des colis directement depuis son interface (bouton « + » et icône de rafraîchissement dans l'en-tête, menu ⋮ sur chaque ligne).
+
+Options de configuration (toutes facultatives) :
+
+| Option | Type | Défaut | Description |
+| --- | --- | --- | --- |
+| `title` | string | `Parcel Tracker` | Titre affiché dans l'en-tête de la carte. |
+| `editable` | boolean | `true` | Si `false`, masque les actions de gestion (ajout, modification, archivage, suppression, rafraîchissement) pour un usage en lecture seule (ex. tableau de bord partagé/kiosque). |
 
 ## Développement
 

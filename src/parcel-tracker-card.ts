@@ -1,5 +1,5 @@
 import { LitElement, css, html, nothing } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 
 import {
   DEFAULT_STATUS_META,
@@ -14,9 +14,17 @@ import type {
   ParcelAttributes,
   ParcelTrackerCardConfig,
 } from "./types";
+import "./upsert-dialog";
+import type { ParcelTrackerUpsertDialog } from "./upsert-dialog";
 
 const PLATFORM = "parcel_tracker";
 const PARCEL_TRANSLATION_KEY = "parcel";
+
+interface PendingDelete {
+  entityId: string;
+  parcelId: string;
+  name: string;
+}
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -57,9 +65,17 @@ export class ParcelTrackerCard extends LitElement {
   @property({ attribute: false }) hass?: HomeAssistantLike;
 
   @state() private _config?: ParcelTrackerCardConfig;
+  @state() private _openMenuEntityId: string | null = null;
+  @state() private _pendingDelete: PendingDelete | null = null;
+
+  @query("parcel-tracker-upsert-dialog") private _upsertDialog?: ParcelTrackerUpsertDialog;
 
   setConfig(config: ParcelTrackerCardConfig): void {
     this._config = config;
+  }
+
+  private get _editable(): boolean {
+    return this._config?.editable ?? true;
   }
 
   static getStubConfig(): ParcelTrackerCardConfig {
@@ -125,6 +141,78 @@ export class ParcelTrackerCard extends LitElement {
     fireEvent(this, "hass-more-info", { entityId });
   }
 
+  private _parcelId(entityId: string): string {
+    return this.hass?.entities[entityId]?.unique_id ?? "";
+  }
+
+  private _toggleMenu(entityId: string): void {
+    this._openMenuEntityId = this._openMenuEntityId === entityId ? null : entityId;
+  }
+
+  private _openAdd(): void {
+    this._openMenuEntityId = null;
+    this._upsertDialog?.openForAdd();
+  }
+
+  private _openEdit(stateObj: HassEntity): void {
+    const attrs = stateObj.attributes as unknown as ParcelAttributes;
+    // display_name (and thus friendly_name) falls back to the tracking
+    // number when the parcel has no explicit name — an empty name can't be
+    // told apart from a name that happens to equal the tracking number, but
+    // that's an acceptable edge case for prefilling the edit form.
+    const strippedName = stripDevicePrefix(String(stateObj.attributes.friendly_name ?? ""));
+    const name = strippedName === attrs.tracking_number ? "" : strippedName;
+
+    this._openMenuEntityId = null;
+    this._upsertDialog?.openForEdit({
+      parcelId: this._parcelId(stateObj.entity_id),
+      trackingNumber: attrs.tracking_number,
+      carrier: attrs.carrier,
+      name,
+      notes: attrs.notes,
+    });
+  }
+
+  private async _archive(stateObj: HassEntity): Promise<void> {
+    this._openMenuEntityId = null;
+    try {
+      await this.hass?.callService(PLATFORM, "archive", {
+        parcel_id: this._parcelId(stateObj.entity_id),
+      });
+    } catch (err) {
+      console.error("parcel_tracker.archive failed", err);
+    }
+  }
+
+  private _confirmDelete(stateObj: HassEntity): void {
+    this._openMenuEntityId = null;
+    const name = stripDevicePrefix(String(stateObj.attributes.friendly_name ?? stateObj.entity_id));
+    this._pendingDelete = {
+      entityId: stateObj.entity_id,
+      parcelId: this._parcelId(stateObj.entity_id),
+      name,
+    };
+  }
+
+  private async _confirmedDelete(): Promise<void> {
+    const pending = this._pendingDelete;
+    if (!pending) return;
+    this._pendingDelete = null;
+    try {
+      await this.hass?.callService(PLATFORM, "remove", { parcel_id: pending.parcelId });
+    } catch (err) {
+      console.error("parcel_tracker.remove failed", err);
+    }
+  }
+
+  private async _refresh(): Promise<void> {
+    try {
+      await this.hass?.callService(PLATFORM, "refresh", {});
+    } catch (err) {
+      console.error("parcel_tracker.refresh failed", err);
+    }
+  }
+
   private _counterLabel(stateObj: HassEntity): string {
     const translationKey = this._translationKey(stateObj);
     const localized = this.hass?.localize?.(
@@ -168,21 +256,73 @@ export class ParcelTrackerCard extends LitElement {
       }
     }
 
-    return html`<div
-      class="parcel-row"
-      role="button"
-      tabindex="0"
-      @click=${() => this._openMoreInfo(stateObj.entity_id)}
-      @keydown=${(ev: KeyboardEvent) => {
-        if (ev.key === "Enter" || ev.key === " ") this._openMoreInfo(stateObj.entity_id);
-      }}
-    >
-      <ha-icon icon=${meta.icon} style="color: ${meta.color}"></ha-icon>
-      <div class="parcel-info">
-        <span class="parcel-name">${name}</span>
-        <span class="parcel-secondary">${secondary}</span>
+    const menuOpen = this._openMenuEntityId === stateObj.entity_id;
+
+    return html`<div class="parcel">
+      <div
+        class="parcel-row"
+        role="button"
+        tabindex="0"
+        @click=${() => this._openMoreInfo(stateObj.entity_id)}
+        @keydown=${(ev: KeyboardEvent) => {
+          if (ev.key === "Enter" || ev.key === " ") this._openMoreInfo(stateObj.entity_id);
+        }}
+      >
+        <ha-icon icon=${meta.icon} style="color: ${meta.color}"></ha-icon>
+        <div class="parcel-info">
+          <span class="parcel-name">${name}</span>
+          <span class="parcel-secondary">${secondary}</span>
+        </div>
+        <span class="parcel-status" style="background: ${meta.color}">${this._formatState(stateObj)}</span>
+        ${this._editable
+          ? html`<button
+              class="icon-button"
+              aria-label="Actions"
+              @click=${(ev: Event) => {
+                ev.stopPropagation();
+                this._toggleMenu(stateObj.entity_id);
+              }}
+            >
+              <ha-icon icon="mdi:dots-vertical"></ha-icon>
+            </button>`
+          : nothing}
       </div>
-      <span class="parcel-status" style="background: ${meta.color}">${this._formatState(stateObj)}</span>
+      ${menuOpen ? this._renderRowActions(stateObj) : nothing}
+    </div>`;
+  }
+
+  private _renderRowActions(stateObj: HassEntity) {
+    return html`<div class="parcel-actions">
+      <button
+        @click=${(ev: Event) => {
+          ev.stopPropagation();
+          this._openEdit(stateObj);
+        }}
+      >
+        <ha-icon icon="mdi:pencil-outline"></ha-icon>
+        Modifier
+      </button>
+      ${stateObj.state === "delivered"
+        ? html`<button
+            @click=${(ev: Event) => {
+              ev.stopPropagation();
+              this._archive(stateObj);
+            }}
+          >
+            <ha-icon icon="mdi:archive-outline"></ha-icon>
+            Archiver
+          </button>`
+        : nothing}
+      <button
+        class="danger"
+        @click=${(ev: Event) => {
+          ev.stopPropagation();
+          this._confirmDelete(stateObj);
+        }}
+      >
+        <ha-icon icon="mdi:delete-outline"></ha-icon>
+        Supprimer
+      </button>
     </div>`;
   }
 
@@ -190,18 +330,101 @@ export class ParcelTrackerCard extends LitElement {
     if (!this.hass || !this._config) return nothing;
 
     const parcels = this._parcelEntities();
+    const editable = this._editable;
 
-    return html`<ha-card header=${this._config.title ?? "Parcel Tracker"}>
+    return html`<ha-card>
+      <div class="card-header">
+        <div class="name">${this._config.title ?? "Parcel Tracker"}</div>
+        ${editable
+          ? html`<div class="header-actions">
+              <button class="icon-button" title="Rafraîchir" @click=${() => this._refresh()}>
+                <ha-icon icon="mdi:refresh"></ha-icon>
+              </button>
+              <button class="icon-button" title="Ajouter un colis" @click=${() => this._openAdd()}>
+                <ha-icon icon="mdi:plus"></ha-icon>
+              </button>
+            </div>`
+          : nothing}
+      </div>
       <div class="card-content">
         ${this._renderCounters()}
         ${parcels.length === 0
-          ? html`<div class="empty">Aucun colis suivi.</div>`
+          ? html`<div class="empty">
+              ${editable
+                ? html`<button class="link-button" @click=${() => this._openAdd()}>
+                    Aucun colis suivi. Ajouter un colis.
+                  </button>`
+                : "Aucun colis suivi."}
+            </div>`
           : html`<div class="parcels">${parcels.map((p) => this._renderParcelRow(p))}</div>`}
       </div>
-    </ha-card>`;
+    </ha-card>
+    ${editable ? html`<parcel-tracker-upsert-dialog .hass=${this.hass}></parcel-tracker-upsert-dialog>` : nothing}
+    ${this._renderDeleteConfirm()}`;
+  }
+
+  private _renderDeleteConfirm() {
+    if (!this._pendingDelete) return nothing;
+    return html`<ha-dialog
+      open
+      .heading=${"Supprimer ce colis ?"}
+      @closed=${() => (this._pendingDelete = null)}
+    >
+      <p>
+        Supprimer définitivement « ${this._pendingDelete.name} » ? Cette action efface aussi son
+        historique et ne peut pas être annulée.
+      </p>
+      <button slot="secondaryAction" @click=${() => (this._pendingDelete = null)}>Annuler</button>
+      <button class="danger" slot="primaryAction" @click=${() => this._confirmedDelete()}>
+        Supprimer
+      </button>
+    </ha-dialog>`;
   }
 
   static styles = css`
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 16px 0;
+      font-size: 1.2em;
+      font-weight: 400;
+      color: var(--ha-card-header-color, var(--primary-text-color));
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 4px;
+    }
+
+    .icon-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: none;
+      background: none;
+      color: var(--secondary-text-color);
+      cursor: pointer;
+    }
+
+    .icon-button:hover {
+      background: var(--secondary-background-color);
+      color: var(--primary-text-color);
+    }
+
+    .link-button {
+      font: inherit;
+      background: none;
+      border: none;
+      padding: 0;
+      color: var(--primary-color);
+      cursor: pointer;
+      text-align: left;
+    }
+
     .card-content {
       padding: 0 0 8px;
     }
@@ -301,6 +524,36 @@ export class ParcelTrackerCard extends LitElement {
       color: var(--card-background-color, #fff);
       padding: 3px 10px;
       border-radius: 999px;
+    }
+
+    .parcel-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      padding: 0 16px 8px 56px;
+    }
+
+    .parcel-actions button {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font: inherit;
+      font-size: 0.85em;
+      background: var(--secondary-background-color);
+      color: var(--primary-text-color);
+      border: none;
+      border-radius: 8px;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+
+    .parcel-actions button ha-icon {
+      --mdc-icon-size: 16px;
+    }
+
+    .parcel-actions button.danger,
+    ha-dialog button.danger {
+      color: var(--error-color);
     }
   `;
 }
