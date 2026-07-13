@@ -378,10 +378,12 @@ export class ParcelTrackerCard extends LitElement {
         Supprimer définitivement « ${this._pendingDelete.name} » ? Cette action efface aussi son
         historique et ne peut pas être annulée.
       </p>
-      <button slot="secondaryAction" @click=${() => (this._pendingDelete = null)}>Annuler</button>
-      <button class="danger" slot="primaryAction" @click=${() => this._confirmedDelete()}>
-        Supprimer
-      </button>
+      <ha-dialog-footer slot="footer">
+        <button slot="secondaryAction" @click=${() => (this._pendingDelete = null)}>Annuler</button>
+        <button class="danger" slot="primaryAction" @click=${() => this._confirmedDelete()}>
+          Supprimer
+        </button>
+      </ha-dialog-footer>
     </ha-dialog>`;
   }
 

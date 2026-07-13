@@ -267,12 +267,14 @@ export class ParcelTrackerUpsertDialog extends LitElement {
         ${this._renderField("notes", "Notes", this._notes, (v) => (this._notes = v))}
         ${this._error ? html`<p class="error">${this._error}</p>` : nothing}
       </div>
-      <button slot="secondaryAction" ?disabled=${this._submitting} @click=${() => this._close()}>
-        Annuler
-      </button>
-      <button slot="primaryAction" ?disabled=${this._submitting} @click=${() => this._submit()}>
-        ${this._submitting ? "…" : isEdit ? "Enregistrer" : "Ajouter"}
-      </button>
+      <ha-dialog-footer slot="footer">
+        <button slot="secondaryAction" ?disabled=${this._submitting} @click=${() => this._close()}>
+          Annuler
+        </button>
+        <button slot="primaryAction" ?disabled=${this._submitting} @click=${() => this._submit()}>
+          ${this._submitting ? "…" : isEdit ? "Enregistrer" : "Ajouter"}
+        </button>
+      </ha-dialog-footer>
     </ha-dialog>`;
   }
 
