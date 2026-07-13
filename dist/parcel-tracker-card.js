@@ -351,12 +351,14 @@ let ParcelTrackerUpsertDialog = class ParcelTrackerUpsertDialog extends i {
         ${this._renderField("notes", "Notes", this._notes, (v) => (this._notes = v))}
         ${this._error ? b `<p class="error">${this._error}</p>` : A}
       </div>
-      <button slot="secondaryAction" ?disabled=${this._submitting} @click=${() => this._close()}>
-        Annuler
-      </button>
-      <button slot="primaryAction" ?disabled=${this._submitting} @click=${() => this._submit()}>
-        ${this._submitting ? "…" : isEdit ? "Enregistrer" : "Ajouter"}
-      </button>
+      <ha-dialog-footer slot="footer">
+        <button slot="secondaryAction" ?disabled=${this._submitting} @click=${() => this._close()}>
+          Annuler
+        </button>
+        <button slot="primaryAction" ?disabled=${this._submitting} @click=${() => this._submit()}>
+          ${this._submitting ? "…" : isEdit ? "Enregistrer" : "Ajouter"}
+        </button>
+      </ha-dialog-footer>
     </ha-dialog>`;
     }
 };
@@ -765,10 +767,12 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
         Supprimer définitivement « ${this._pendingDelete.name} » ? Cette action efface aussi son
         historique et ne peut pas être annulée.
       </p>
-      <button slot="secondaryAction" @click=${() => (this._pendingDelete = null)}>Annuler</button>
-      <button class="danger" slot="primaryAction" @click=${() => this._confirmedDelete()}>
-        Supprimer
-      </button>
+      <ha-dialog-footer slot="footer">
+        <button slot="secondaryAction" @click=${() => (this._pendingDelete = null)}>Annuler</button>
+        <button class="danger" slot="primaryAction" @click=${() => this._confirmedDelete()}>
+          Supprimer
+        </button>
+      </ha-dialog-footer>
     </ha-dialog>`;
     }
 };
