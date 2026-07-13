@@ -141,11 +141,6 @@ const CARRIERS = [
 ];
 
 const DOMAIN = "parcel_tracker";
-// add/update (when tracking_number or carrier change) trigger a synchronous
-// carrier lookup on the backend, but a bad tracking number doesn't reject the
-// service call — it's reported asynchronously via the parcel_error event
-// instead. Give it a few seconds to show up before assuming success.
-const ERROR_LISTEN_MS = 5000;
 let ParcelTrackerUpsertDialog = class ParcelTrackerUpsertDialog extends i {
     constructor() {
         super(...arguments);
@@ -160,7 +155,6 @@ let ParcelTrackerUpsertDialog = class ParcelTrackerUpsertDialog extends i {
         this._availableCarriers = CARRIERS;
         this._originalTrackingNumber = "";
         this._originalCarrier = CARRIERS[0].value;
-        this._unsubscribeError = null;
     }
     openForAdd() {
         this._parcelId = null;
@@ -222,22 +216,9 @@ let ParcelTrackerUpsertDialog = class ParcelTrackerUpsertDialog extends i {
         }
         this._availableCarriers = carriers.length > 0 ? carriers : CARRIERS;
     }
-    disconnectedCallback() {
-        super.disconnectedCallback();
-        this._cleanupErrorListener();
-    }
-    _cleanupErrorListener() {
-        if (this._errorTimeout !== undefined) {
-            window.clearTimeout(this._errorTimeout);
-            this._errorTimeout = undefined;
-        }
-        this._unsubscribeError?.();
-        this._unsubscribeError = null;
-    }
     _close() {
         this._open = false;
         this._submitting = false;
-        this._cleanupErrorListener();
     }
     async _submit() {
         if (this._submitting)
@@ -251,26 +232,32 @@ let ParcelTrackerUpsertDialog = class ParcelTrackerUpsertDialog extends i {
         this._submitting = true;
         this._error = null;
         const isEdit = this._parcelId !== null;
+        // Only add/update calls that actually (re-)look up the carrier can
+        // surface a fresh error; a pure name/notes edit mustn't resurface a
+        // stale last_error left over from an unrelated background refresh.
         const willRefresh = !isEdit ||
             this._trackingNumber !== this._originalTrackingNumber ||
             this._carrier !== this._originalCarrier;
         try {
-            if (isEdit) {
-                await this.hass.callService(DOMAIN, "update", {
+            const result = await this.hass.callService(DOMAIN, isEdit ? "update" : "add", isEdit
+                ? {
                     parcel_id: this._parcelId,
                     tracking_number: this._trackingNumber,
                     carrier: this._carrier,
                     name: this._name,
                     notes: this._notes,
-                });
-            }
-            else {
-                await this.hass.callService(DOMAIN, "add", {
+                }
+                : {
                     tracking_number: this._trackingNumber,
                     carrier: this._carrier,
                     name: this._name,
                     notes: this._notes,
-                });
+                }, undefined, true, true);
+            const error = willRefresh ? result?.response?.error : null;
+            if (error) {
+                this._submitting = false;
+                this._error = error;
+                return;
             }
         }
         catch (err) {
@@ -278,42 +265,7 @@ let ParcelTrackerUpsertDialog = class ParcelTrackerUpsertDialog extends i {
             this._error = err instanceof Error ? err.message : String(err);
             return;
         }
-        if (!willRefresh) {
-            this._close();
-            return;
-        }
-        this._waitForErrorThenClose();
-    }
-    _waitForErrorThenClose() {
-        const trackingNumber = this._trackingNumber;
-        let settled = false;
-        const onSettled = () => {
-            if (settled)
-                return;
-            settled = true;
-            this._cleanupErrorListener();
-        };
-        this.hass.connection
-            .subscribeEvents((event) => {
-            if (event.data.tracking_number !== trackingNumber)
-                return;
-            this._submitting = false;
-            this._error = event.data.error ?? "Erreur lors du suivi de ce colis.";
-            onSettled();
-        }, "parcel_error")
-            .then((unsubscribe) => {
-            if (settled) {
-                unsubscribe();
-                return;
-            }
-            this._unsubscribeError = unsubscribe;
-        });
-        this._errorTimeout = window.setTimeout(() => {
-            if (settled)
-                return;
-            onSettled();
-            this._close();
-        }, ERROR_LISTEN_MS);
+        this._close();
     }
     _renderField(id, label, value, onInput, required = false) {
         return b `<div class="field">
@@ -474,6 +426,8 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
         super(...arguments);
         this._openMenuEntityId = null;
         this._pendingDelete = null;
+        this._deleteSubmitting = false;
+        this._deleteError = null;
     }
     setConfig(config) {
         this._config = config;
@@ -584,6 +538,7 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
     _confirmDelete(stateObj) {
         this._openMenuEntityId = null;
         const name = stripDevicePrefix(String(stateObj.attributes.friendly_name ?? stateObj.entity_id));
+        this._deleteError = null;
         this._pendingDelete = {
             entityId: stateObj.entity_id,
             parcelId: this._parcelId(stateObj),
@@ -592,14 +547,20 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
     }
     async _confirmedDelete() {
         const pending = this._pendingDelete;
-        if (!pending)
+        if (!pending || this._deleteSubmitting)
             return;
-        this._pendingDelete = null;
+        this._deleteSubmitting = true;
+        this._deleteError = null;
         try {
             await this.hass?.callService(PLATFORM, "remove", { parcel_id: pending.parcelId });
+            this._pendingDelete = null;
         }
         catch (err) {
             console.error("parcel_tracker.remove failed", err);
+            this._deleteError = err instanceof Error ? err.message : String(err);
+        }
+        finally {
+            this._deleteSubmitting = false;
         }
     }
     async _refresh() {
@@ -764,16 +725,31 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
         return b `<ha-dialog
       open
       .heading=${"Supprimer ce colis ?"}
-      @closed=${() => (this._pendingDelete = null)}
+      @closed=${() => {
+            this._pendingDelete = null;
+            this._deleteError = null;
+        }}
     >
       <p>
         Supprimer définitivement « ${this._pendingDelete.name} » ? Cette action efface aussi son
         historique et ne peut pas être annulée.
       </p>
+      ${this._deleteError ? b `<p class="error">${this._deleteError}</p>` : A}
       <ha-dialog-footer slot="footer">
-        <button slot="secondaryAction" @click=${() => (this._pendingDelete = null)}>Annuler</button>
-        <button class="danger" slot="primaryAction" @click=${() => this._confirmedDelete()}>
-          Supprimer
+        <button
+          slot="secondaryAction"
+          ?disabled=${this._deleteSubmitting}
+          @click=${() => (this._pendingDelete = null)}
+        >
+          Annuler
+        </button>
+        <button
+          class="danger"
+          slot="primaryAction"
+          ?disabled=${this._deleteSubmitting}
+          @click=${() => this._confirmedDelete()}
+        >
+          ${this._deleteSubmitting ? "…" : "Supprimer"}
         </button>
       </ha-dialog-footer>
     </ha-dialog>`;
@@ -953,6 +929,10 @@ ParcelTrackerCard.styles = i$3 `
     ha-dialog button.danger {
       color: var(--error-color);
     }
+
+    ha-dialog p.error {
+      color: var(--error-color);
+    }
   `;
 __decorate([
     n({ attribute: false })
@@ -966,6 +946,12 @@ __decorate([
 __decorate([
     r()
 ], ParcelTrackerCard.prototype, "_pendingDelete", void 0);
+__decorate([
+    r()
+], ParcelTrackerCard.prototype, "_deleteSubmitting", void 0);
+__decorate([
+    r()
+], ParcelTrackerCard.prototype, "_deleteError", void 0);
 __decorate([
     e("parcel-tracker-upsert-dialog")
 ], ParcelTrackerCard.prototype, "_upsertDialog", void 0);

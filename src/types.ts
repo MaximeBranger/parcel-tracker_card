@@ -11,11 +11,6 @@ export interface HassEntityRegistryEntry {
   unique_id: string;
 }
 
-export interface HassEvent<T = Record<string, unknown>> {
-  event_type: string;
-  data: T;
-}
-
 export interface HomeAssistantLike {
   states: Record<string, HassEntity>;
   entities: Record<string, HassEntityRegistryEntry>;
@@ -29,12 +24,6 @@ export interface HomeAssistantLike {
     notifyOnError?: boolean,
     returnResponse?: boolean,
   ) => Promise<{ response?: T } | undefined>;
-  connection: {
-    subscribeEvents: <T = Record<string, unknown>>(
-      callback: (event: HassEvent<T>) => void,
-      eventType: string,
-    ) => Promise<() => void>;
-  };
 }
 
 export interface ParcelAttributes {
