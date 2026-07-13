@@ -20,6 +20,14 @@ export const DEFAULT_STATUS_META: StatusMeta = {
   color: "var(--disabled-text-color)",
 };
 
+// Overrides STATUS_META when a parcel's last refresh failed (e.g. a
+// rejected carrier API key) — takes priority over the delivery status,
+// which is stale until the next successful refresh.
+export const ERROR_STATUS_META: StatusMeta = {
+  icon: "mdi:alert-circle",
+  color: "var(--error-color)",
+};
+
 const GLOBAL_COUNTER_ICONS: Record<string, string> = {
   parcels_active: "mdi:truck-fast-outline",
   parcels_delivered: "mdi:package-variant-closed-check",

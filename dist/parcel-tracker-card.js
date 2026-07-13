@@ -100,6 +100,13 @@ const DEFAULT_STATUS_META = {
     icon: "mdi:package-variant",
     color: "var(--disabled-text-color)",
 };
+// Overrides STATUS_META when a parcel's last refresh failed (e.g. a
+// rejected carrier API key) — takes priority over the delivery status,
+// which is stale until the next successful refresh.
+const ERROR_STATUS_META = {
+    icon: "mdi:alert-circle",
+    color: "var(--error-color)",
+};
 const GLOBAL_COUNTER_ICONS = {
     parcels_active: "mdi:truck-fast-outline",
     parcels_delivered: "mdi:package-variant-closed-check",
@@ -129,6 +136,8 @@ const CARRIERS = [
     { value: "dhl", label: "DHL" },
     { value: "ups", label: "UPS" },
     { value: "mondial_relay", label: "Mondial Relay" },
+    { value: "postnord", label: "PostNord" },
+    { value: "dpd", label: "DPD" },
 ];
 
 const DOMAIN = "parcel_tracker";
@@ -620,10 +629,14 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
     }
     _renderParcelRow(stateObj) {
         const attrs = stateObj.attributes;
-        const meta = STATUS_META[stateObj.state] ?? DEFAULT_STATUS_META;
+        const hasError = Boolean(attrs.last_error);
+        const meta = hasError ? ERROR_STATUS_META : STATUS_META[stateObj.state] ?? DEFAULT_STATUS_META;
         const name = stripDevicePrefix(String(stateObj.attributes.friendly_name ?? stateObj.entity_id));
         let secondary = attrs.carrier;
-        if (stateObj.state === "delivered") {
+        if (hasError) {
+            secondary += ` · ${attrs.last_error}`;
+        }
+        else if (stateObj.state === "delivered") {
             const delivered = formatDate(attrs.last_update);
             if (delivered)
                 secondary += ` · Livré le ${delivered}`;
@@ -652,7 +665,7 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
         <ha-icon icon=${meta.icon} style="color: ${meta.color}"></ha-icon>
         <div class="parcel-info">
           <span class="parcel-name">${name}</span>
-          <span class="parcel-secondary">${secondary}</span>
+          <span class="parcel-secondary" title=${hasError ? secondary : A}>${secondary}</span>
         </div>
         <span class="parcel-status" style="background: ${meta.color}">${this._formatState(stateObj)}</span>
         ${this._editable

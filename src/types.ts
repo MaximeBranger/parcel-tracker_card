@@ -47,6 +47,7 @@ export interface ParcelAttributes {
   last_update: string | null;
   tracking_url: string | null;
   days_since_shipping: number | null;
+  last_error: string | null;
 }
 
 export interface ParcelTrackerCardConfig {
