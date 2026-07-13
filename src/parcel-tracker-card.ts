@@ -3,6 +3,7 @@ import { customElement, property, query, state } from "lit/decorators.js";
 
 import {
   DEFAULT_STATUS_META,
+  ERROR_STATUS_META,
   GLOBAL_COUNTER_TRANSLATION_KEYS,
   STATUS_META,
   globalCounterColor,
@@ -240,11 +241,14 @@ export class ParcelTrackerCard extends LitElement {
 
   private _renderParcelRow(stateObj: HassEntity) {
     const attrs = stateObj.attributes as unknown as ParcelAttributes;
-    const meta = STATUS_META[stateObj.state] ?? DEFAULT_STATUS_META;
+    const hasError = Boolean(attrs.last_error);
+    const meta = hasError ? ERROR_STATUS_META : STATUS_META[stateObj.state] ?? DEFAULT_STATUS_META;
     const name = stripDevicePrefix(String(stateObj.attributes.friendly_name ?? stateObj.entity_id));
 
     let secondary = attrs.carrier;
-    if (stateObj.state === "delivered") {
+    if (hasError) {
+      secondary += ` · ${attrs.last_error}`;
+    } else if (stateObj.state === "delivered") {
       const delivered = formatDate(attrs.last_update);
       if (delivered) secondary += ` · Livré le ${delivered}`;
     } else {
@@ -271,7 +275,7 @@ export class ParcelTrackerCard extends LitElement {
         <ha-icon icon=${meta.icon} style="color: ${meta.color}"></ha-icon>
         <div class="parcel-info">
           <span class="parcel-name">${name}</span>
-          <span class="parcel-secondary">${secondary}</span>
+          <span class="parcel-secondary" title=${hasError ? secondary : nothing}>${secondary}</span>
         </div>
         <span class="parcel-status" style="background: ${meta.color}">${this._formatState(stateObj)}</span>
         ${this._editable
