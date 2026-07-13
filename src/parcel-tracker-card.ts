@@ -142,8 +142,11 @@ export class ParcelTrackerCard extends LitElement {
     fireEvent(this, "hass-more-info", { entityId });
   }
 
-  private _parcelId(entityId: string): string {
-    return this.hass?.entities[entityId]?.unique_id ?? "";
+  private _parcelId(stateObj: HassEntity): string {
+    // hass.entities is the lightweight entity-registry-for-display object;
+    // it doesn't carry unique_id, so parcel_id has to come from the state
+    // attribute the integration exposes instead.
+    return (stateObj.attributes as unknown as ParcelAttributes).parcel_id ?? "";
   }
 
   private _toggleMenu(entityId: string): void {
@@ -166,7 +169,7 @@ export class ParcelTrackerCard extends LitElement {
 
     this._openMenuEntityId = null;
     this._upsertDialog?.openForEdit({
-      parcelId: this._parcelId(stateObj.entity_id),
+      parcelId: this._parcelId(stateObj),
       trackingNumber: attrs.tracking_number,
       carrier: attrs.carrier,
       name,
@@ -178,7 +181,7 @@ export class ParcelTrackerCard extends LitElement {
     this._openMenuEntityId = null;
     try {
       await this.hass?.callService(PLATFORM, "archive", {
-        parcel_id: this._parcelId(stateObj.entity_id),
+        parcel_id: this._parcelId(stateObj),
       });
     } catch (err) {
       console.error("parcel_tracker.archive failed", err);
@@ -190,7 +193,7 @@ export class ParcelTrackerCard extends LitElement {
     const name = stripDevicePrefix(String(stateObj.attributes.friendly_name ?? stateObj.entity_id));
     this._pendingDelete = {
       entityId: stateObj.entity_id,
-      parcelId: this._parcelId(stateObj.entity_id),
+      parcelId: this._parcelId(stateObj),
       name,
     };
   }
