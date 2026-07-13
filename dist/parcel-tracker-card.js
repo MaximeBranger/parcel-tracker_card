@@ -540,8 +540,11 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
     _openMoreInfo(entityId) {
         fireEvent(this, "hass-more-info", { entityId });
     }
-    _parcelId(entityId) {
-        return this.hass?.entities[entityId]?.unique_id ?? "";
+    _parcelId(stateObj) {
+        // hass.entities is the lightweight entity-registry-for-display object;
+        // it doesn't carry unique_id, so parcel_id has to come from the state
+        // attribute the integration exposes instead.
+        return stateObj.attributes.parcel_id ?? "";
     }
     _toggleMenu(entityId) {
         this._openMenuEntityId = this._openMenuEntityId === entityId ? null : entityId;
@@ -560,7 +563,7 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
         const name = strippedName === attrs.tracking_number ? "" : strippedName;
         this._openMenuEntityId = null;
         this._upsertDialog?.openForEdit({
-            parcelId: this._parcelId(stateObj.entity_id),
+            parcelId: this._parcelId(stateObj),
             trackingNumber: attrs.tracking_number,
             carrier: attrs.carrier,
             name,
@@ -571,7 +574,7 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
         this._openMenuEntityId = null;
         try {
             await this.hass?.callService(PLATFORM, "archive", {
-                parcel_id: this._parcelId(stateObj.entity_id),
+                parcel_id: this._parcelId(stateObj),
             });
         }
         catch (err) {
@@ -583,7 +586,7 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
         const name = stripDevicePrefix(String(stateObj.attributes.friendly_name ?? stateObj.entity_id));
         this._pendingDelete = {
             entityId: stateObj.entity_id,
-            parcelId: this._parcelId(stateObj.entity_id),
+            parcelId: this._parcelId(stateObj),
             name,
         };
     }

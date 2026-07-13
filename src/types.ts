@@ -38,6 +38,7 @@ export interface HomeAssistantLike {
 }
 
 export interface ParcelAttributes {
+  parcel_id: string;
   tracking_number: string;
   carrier: string;
   notes: string;
