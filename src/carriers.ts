@@ -10,4 +10,6 @@ export const CARRIERS: CarrierOption[] = [
   { value: "dhl", label: "DHL" },
   { value: "ups", label: "UPS" },
   { value: "mondial_relay", label: "Mondial Relay" },
+  { value: "postnord", label: "PostNord" },
+  { value: "dpd", label: "DPD" },
 ];
