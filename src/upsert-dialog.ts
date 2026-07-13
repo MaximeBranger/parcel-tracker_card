@@ -5,11 +5,6 @@ import { CARRIERS, type CarrierOption } from "./carriers";
 import type { HomeAssistantLike } from "./types";
 
 const DOMAIN = "parcel_tracker";
-// add/update (when tracking_number or carrier change) trigger a synchronous
-// carrier lookup on the backend, but a bad tracking number doesn't reject the
-// service call — it's reported asynchronously via the parcel_error event
-// instead. Give it a few seconds to show up before assuming success.
-const ERROR_LISTEN_MS = 5000;
 
 export interface UpsertTarget {
   parcelId: string;
@@ -41,8 +36,6 @@ export class ParcelTrackerUpsertDialog extends LitElement {
 
   private _originalTrackingNumber = "";
   private _originalCarrier = CARRIERS[0].value;
-  private _unsubscribeError: (() => void) | null = null;
-  private _errorTimeout?: number;
 
   openForAdd(): void {
     this._parcelId = null;
@@ -115,24 +108,9 @@ export class ParcelTrackerUpsertDialog extends LitElement {
     this._availableCarriers = carriers.length > 0 ? carriers : CARRIERS;
   }
 
-  disconnectedCallback(): void {
-    super.disconnectedCallback();
-    this._cleanupErrorListener();
-  }
-
-  private _cleanupErrorListener(): void {
-    if (this._errorTimeout !== undefined) {
-      window.clearTimeout(this._errorTimeout);
-      this._errorTimeout = undefined;
-    }
-    this._unsubscribeError?.();
-    this._unsubscribeError = null;
-  }
-
   private _close(): void {
     this._open = false;
     this._submitting = false;
-    this._cleanupErrorListener();
   }
 
   private async _submit(): Promise<void> {
@@ -147,27 +125,42 @@ export class ParcelTrackerUpsertDialog extends LitElement {
     this._error = null;
 
     const isEdit = this._parcelId !== null;
+    // Only add/update calls that actually (re-)look up the carrier can
+    // surface a fresh error; a pure name/notes edit mustn't resurface a
+    // stale last_error left over from an unrelated background refresh.
     const willRefresh =
       !isEdit ||
       this._trackingNumber !== this._originalTrackingNumber ||
       this._carrier !== this._originalCarrier;
 
     try {
-      if (isEdit) {
-        await this.hass.callService(DOMAIN, "update", {
-          parcel_id: this._parcelId,
-          tracking_number: this._trackingNumber,
-          carrier: this._carrier,
-          name: this._name,
-          notes: this._notes,
-        });
-      } else {
-        await this.hass.callService(DOMAIN, "add", {
-          tracking_number: this._trackingNumber,
-          carrier: this._carrier,
-          name: this._name,
-          notes: this._notes,
-        });
+      const result = await this.hass.callService<{ error: string | null }>(
+        DOMAIN,
+        isEdit ? "update" : "add",
+        isEdit
+          ? {
+              parcel_id: this._parcelId,
+              tracking_number: this._trackingNumber,
+              carrier: this._carrier,
+              name: this._name,
+              notes: this._notes,
+            }
+          : {
+              tracking_number: this._trackingNumber,
+              carrier: this._carrier,
+              name: this._name,
+              notes: this._notes,
+            },
+        undefined,
+        true,
+        true,
+      );
+
+      const error = willRefresh ? result?.response?.error : null;
+      if (error) {
+        this._submitting = false;
+        this._error = error;
+        return;
       }
     } catch (err) {
       this._submitting = false;
@@ -175,44 +168,7 @@ export class ParcelTrackerUpsertDialog extends LitElement {
       return;
     }
 
-    if (!willRefresh) {
-      this._close();
-      return;
-    }
-
-    this._waitForErrorThenClose();
-  }
-
-  private _waitForErrorThenClose(): void {
-    const trackingNumber = this._trackingNumber;
-    let settled = false;
-
-    const onSettled = () => {
-      if (settled) return;
-      settled = true;
-      this._cleanupErrorListener();
-    };
-
-    this.hass!.connection
-      .subscribeEvents<{ tracking_number?: string; error?: string }>((event) => {
-        if (event.data.tracking_number !== trackingNumber) return;
-        this._submitting = false;
-        this._error = event.data.error ?? "Erreur lors du suivi de ce colis.";
-        onSettled();
-      }, "parcel_error")
-      .then((unsubscribe) => {
-        if (settled) {
-          unsubscribe();
-          return;
-        }
-        this._unsubscribeError = unsubscribe;
-      });
-
-    this._errorTimeout = window.setTimeout(() => {
-      if (settled) return;
-      onSettled();
-      this._close();
-    }, ERROR_LISTEN_MS);
+    this._close();
   }
 
   private _renderField(

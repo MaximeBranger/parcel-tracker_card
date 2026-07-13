@@ -68,6 +68,8 @@ export class ParcelTrackerCard extends LitElement {
   @state() private _config?: ParcelTrackerCardConfig;
   @state() private _openMenuEntityId: string | null = null;
   @state() private _pendingDelete: PendingDelete | null = null;
+  @state() private _deleteSubmitting = false;
+  @state() private _deleteError: string | null = null;
 
   @query("parcel-tracker-upsert-dialog") private _upsertDialog?: ParcelTrackerUpsertDialog;
 
@@ -191,6 +193,7 @@ export class ParcelTrackerCard extends LitElement {
   private _confirmDelete(stateObj: HassEntity): void {
     this._openMenuEntityId = null;
     const name = stripDevicePrefix(String(stateObj.attributes.friendly_name ?? stateObj.entity_id));
+    this._deleteError = null;
     this._pendingDelete = {
       entityId: stateObj.entity_id,
       parcelId: this._parcelId(stateObj),
@@ -200,12 +203,17 @@ export class ParcelTrackerCard extends LitElement {
 
   private async _confirmedDelete(): Promise<void> {
     const pending = this._pendingDelete;
-    if (!pending) return;
-    this._pendingDelete = null;
+    if (!pending || this._deleteSubmitting) return;
+    this._deleteSubmitting = true;
+    this._deleteError = null;
     try {
       await this.hass?.callService(PLATFORM, "remove", { parcel_id: pending.parcelId });
+      this._pendingDelete = null;
     } catch (err) {
       console.error("parcel_tracker.remove failed", err);
+      this._deleteError = err instanceof Error ? err.message : String(err);
+    } finally {
+      this._deleteSubmitting = false;
     }
   }
 
@@ -375,16 +383,31 @@ export class ParcelTrackerCard extends LitElement {
     return html`<ha-dialog
       open
       .heading=${"Supprimer ce colis ?"}
-      @closed=${() => (this._pendingDelete = null)}
+      @closed=${() => {
+        this._pendingDelete = null;
+        this._deleteError = null;
+      }}
     >
       <p>
         Supprimer définitivement « ${this._pendingDelete.name} » ? Cette action efface aussi son
         historique et ne peut pas être annulée.
       </p>
+      ${this._deleteError ? html`<p class="error">${this._deleteError}</p>` : nothing}
       <ha-dialog-footer slot="footer">
-        <button slot="secondaryAction" @click=${() => (this._pendingDelete = null)}>Annuler</button>
-        <button class="danger" slot="primaryAction" @click=${() => this._confirmedDelete()}>
-          Supprimer
+        <button
+          slot="secondaryAction"
+          ?disabled=${this._deleteSubmitting}
+          @click=${() => (this._pendingDelete = null)}
+        >
+          Annuler
+        </button>
+        <button
+          class="danger"
+          slot="primaryAction"
+          ?disabled=${this._deleteSubmitting}
+          @click=${() => this._confirmedDelete()}
+        >
+          ${this._deleteSubmitting ? "…" : "Supprimer"}
         </button>
       </ha-dialog-footer>
     </ha-dialog>`;
@@ -562,6 +585,10 @@ export class ParcelTrackerCard extends LitElement {
 
     .parcel-actions button.danger,
     ha-dialog button.danger {
+      color: var(--error-color);
+    }
+
+    ha-dialog p.error {
       color: var(--error-color);
     }
   `;
