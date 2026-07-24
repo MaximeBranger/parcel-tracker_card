@@ -11,6 +11,7 @@ import {
 } from "./status";
 import type {
   HassEntity,
+  HistoryEntry,
   HomeAssistantLike,
   ParcelAttributes,
   ParcelTrackerCardConfig,
@@ -43,12 +44,23 @@ function fireEvent(target: EventTarget, type: string, detail: unknown): void {
 }
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });
+const dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
+  dateStyle: "medium",
+  timeStyle: "short",
+});
 
 function formatDate(value: string | null): string | null {
   if (!value) return null;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
   return dateFormatter.format(date);
+}
+
+function formatDateTime(value: string | null): string | null {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return dateTimeFormatter.format(date);
 }
 
 // Parcel entities aren't `has_entity_name`, but HA still prefixes the hub
@@ -70,6 +82,7 @@ export class ParcelTrackerCard extends LitElement {
   @state() private _pendingDelete: PendingDelete | null = null;
   @state() private _deleteSubmitting = false;
   @state() private _deleteError: string | null = null;
+  @state() private _historyInfo: { name: string; entry: HistoryEntry } | null = null;
 
   @query("parcel-tracker-upsert-dialog") private _upsertDialog?: ParcelTrackerUpsertDialog;
 
@@ -149,6 +162,16 @@ export class ParcelTrackerCard extends LitElement {
     // it doesn't carry unique_id, so parcel_id has to come from the state
     // attribute the integration exposes instead.
     return (stateObj.attributes as unknown as ParcelAttributes).parcel_id ?? "";
+  }
+
+  private _lastHistoryEntry(attrs: ParcelAttributes): HistoryEntry | null {
+    const history = attrs.history;
+    if (!Array.isArray(history) || history.length === 0) return null;
+    return history[history.length - 1];
+  }
+
+  private _showHistoryInfo(name: string, entry: HistoryEntry): void {
+    this._historyInfo = { name, entry };
   }
 
   private _toggleMenu(entityId: string): void {
@@ -272,6 +295,7 @@ export class ParcelTrackerCard extends LitElement {
     }
 
     const menuOpen = this._openMenuEntityId === stateObj.entity_id;
+    const lastEntry = this._lastHistoryEntry(attrs);
 
     return html`<div class="parcel">
       <div
@@ -289,6 +313,19 @@ export class ParcelTrackerCard extends LitElement {
           <span class="parcel-secondary" title=${hasError ? secondary : nothing}>${secondary}</span>
         </div>
         <span class="parcel-status" style="background: ${meta.color}">${this._formatState(stateObj)}</span>
+        ${lastEntry
+          ? html`<button
+              class="icon-button info-button"
+              aria-label="Dernier statut"
+              title="Dernier statut"
+              @click=${(ev: Event) => {
+                ev.stopPropagation();
+                this._showHistoryInfo(name, lastEntry);
+              }}
+            >
+              <ha-icon icon="mdi:information-outline"></ha-icon>
+            </button>`
+          : nothing}
         ${this._editable
           ? html`<button
               class="icon-button"
@@ -375,7 +412,28 @@ export class ParcelTrackerCard extends LitElement {
       </div>
     </ha-card>
     ${editable ? html`<parcel-tracker-upsert-dialog .hass=${this.hass}></parcel-tracker-upsert-dialog>` : nothing}
-    ${this._renderDeleteConfirm()}`;
+    ${this._renderDeleteConfirm()}
+    ${this._renderHistoryInfo()}`;
+  }
+
+  private _renderHistoryInfo() {
+    const info = this._historyInfo;
+    if (!info) return nothing;
+    const date = formatDateTime(info.entry.date);
+    return html`<ha-dialog
+      open
+      .heading=${info.name}
+      @closed=${() => {
+        this._historyInfo = null;
+      }}
+    >
+      <p>${info.entry.label ?? "Aucun libellé disponible."}</p>
+      ${date ? html`<p class="history-meta">${date}</p>` : nothing}
+      ${info.entry.location ? html`<p class="history-meta">${info.entry.location}</p>` : nothing}
+      <ha-dialog-footer slot="footer">
+        <button slot="primaryAction" @click=${() => (this._historyInfo = null)}>Fermer</button>
+      </ha-dialog-footer>
+    </ha-dialog>`;
   }
 
   private _renderDeleteConfirm() {
@@ -556,6 +614,22 @@ export class ParcelTrackerCard extends LitElement {
       color: var(--card-background-color, #fff);
       padding: 3px 10px;
       border-radius: 999px;
+    }
+
+    .info-button {
+      width: 32px;
+      height: 32px;
+      flex: none;
+    }
+
+    .info-button ha-icon {
+      --mdc-icon-size: 20px;
+    }
+
+    ha-dialog p.history-meta {
+      color: var(--secondary-text-color);
+      font-size: 0.85em;
+      margin-top: 4px;
     }
 
     .parcel-actions {

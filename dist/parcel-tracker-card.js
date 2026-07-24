@@ -405,6 +405,10 @@ function fireEvent(target, type, detail) {
     target.dispatchEvent(new CustomEvent(type, { detail, bubbles: true, composed: true }));
 }
 const dateFormatter = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });
+const dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+});
 function formatDate(value) {
     if (!value)
         return null;
@@ -412,6 +416,14 @@ function formatDate(value) {
     if (Number.isNaN(date.getTime()))
         return null;
     return dateFormatter.format(date);
+}
+function formatDateTime(value) {
+    if (!value)
+        return null;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime()))
+        return null;
+    return dateTimeFormatter.format(date);
 }
 // Parcel entities aren't `has_entity_name`, but HA still prefixes the hub
 // device's name onto their friendly_name. Strip it back off for display —
@@ -428,6 +440,7 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
         this._pendingDelete = null;
         this._deleteSubmitting = false;
         this._deleteError = null;
+        this._historyInfo = null;
     }
     setConfig(config) {
         this._config = config;
@@ -499,6 +512,15 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
         // it doesn't carry unique_id, so parcel_id has to come from the state
         // attribute the integration exposes instead.
         return stateObj.attributes.parcel_id ?? "";
+    }
+    _lastHistoryEntry(attrs) {
+        const history = attrs.history;
+        if (!Array.isArray(history) || history.length === 0)
+            return null;
+        return history[history.length - 1];
+    }
+    _showHistoryInfo(name, entry) {
+        this._historyInfo = { name, entry };
     }
     _toggleMenu(entityId) {
         this._openMenuEntityId = this._openMenuEntityId === entityId ? null : entityId;
@@ -617,6 +639,7 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
             }
         }
         const menuOpen = this._openMenuEntityId === stateObj.entity_id;
+        const lastEntry = this._lastHistoryEntry(attrs);
         return b `<div class="parcel">
       <div
         class="parcel-row"
@@ -634,6 +657,19 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
           <span class="parcel-secondary" title=${hasError ? secondary : A}>${secondary}</span>
         </div>
         <span class="parcel-status" style="background: ${meta.color}">${this._formatState(stateObj)}</span>
+        ${lastEntry
+            ? b `<button
+              class="icon-button info-button"
+              aria-label="Dernier statut"
+              title="Dernier statut"
+              @click=${(ev) => {
+                ev.stopPropagation();
+                this._showHistoryInfo(name, lastEntry);
+            }}
+            >
+              <ha-icon icon="mdi:information-outline"></ha-icon>
+            </button>`
+            : A}
         ${this._editable
             ? b `<button
               class="icon-button"
@@ -717,7 +753,28 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
       </div>
     </ha-card>
     ${editable ? b `<parcel-tracker-upsert-dialog .hass=${this.hass}></parcel-tracker-upsert-dialog>` : A}
-    ${this._renderDeleteConfirm()}`;
+    ${this._renderDeleteConfirm()}
+    ${this._renderHistoryInfo()}`;
+    }
+    _renderHistoryInfo() {
+        const info = this._historyInfo;
+        if (!info)
+            return A;
+        const date = formatDateTime(info.entry.date);
+        return b `<ha-dialog
+      open
+      .heading=${info.name}
+      @closed=${() => {
+            this._historyInfo = null;
+        }}
+    >
+      <p>${info.entry.label ?? "Aucun libellé disponible."}</p>
+      ${date ? b `<p class="history-meta">${date}</p>` : A}
+      ${info.entry.location ? b `<p class="history-meta">${info.entry.location}</p>` : A}
+      <ha-dialog-footer slot="footer">
+        <button slot="primaryAction" @click=${() => (this._historyInfo = null)}>Fermer</button>
+      </ha-dialog-footer>
+    </ha-dialog>`;
     }
     _renderDeleteConfirm() {
         if (!this._pendingDelete)
@@ -900,6 +957,22 @@ ParcelTrackerCard.styles = i$3 `
       border-radius: 999px;
     }
 
+    .info-button {
+      width: 32px;
+      height: 32px;
+      flex: none;
+    }
+
+    .info-button ha-icon {
+      --mdc-icon-size: 20px;
+    }
+
+    ha-dialog p.history-meta {
+      color: var(--secondary-text-color);
+      font-size: 0.85em;
+      margin-top: 4px;
+    }
+
     .parcel-actions {
       display: flex;
       flex-wrap: wrap;
@@ -952,6 +1025,9 @@ __decorate([
 __decorate([
     r()
 ], ParcelTrackerCard.prototype, "_deleteError", void 0);
+__decorate([
+    r()
+], ParcelTrackerCard.prototype, "_historyInfo", void 0);
 __decorate([
     e("parcel-tracker-upsert-dialog")
 ], ParcelTrackerCard.prototype, "_upsertDialog", void 0);
