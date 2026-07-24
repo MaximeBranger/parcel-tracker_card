@@ -82,7 +82,7 @@ export class ParcelTrackerCard extends LitElement {
   @state() private _pendingDelete: PendingDelete | null = null;
   @state() private _deleteSubmitting = false;
   @state() private _deleteError: string | null = null;
-  @state() private _historyInfo: { name: string; entry: HistoryEntry } | null = null;
+  @state() private _historyInfo: { name: string; entries: HistoryEntry[] } | null = null;
 
   @query("parcel-tracker-upsert-dialog") private _upsertDialog?: ParcelTrackerUpsertDialog;
 
@@ -164,14 +164,14 @@ export class ParcelTrackerCard extends LitElement {
     return (stateObj.attributes as unknown as ParcelAttributes).parcel_id ?? "";
   }
 
-  private _lastHistoryEntry(attrs: ParcelAttributes): HistoryEntry | null {
+  private _historyNewestFirst(attrs: ParcelAttributes): HistoryEntry[] {
     const history = attrs.history;
-    if (!Array.isArray(history) || history.length === 0) return null;
-    return history[history.length - 1];
+    if (!Array.isArray(history) || history.length === 0) return [];
+    return [...history].reverse();
   }
 
-  private _showHistoryInfo(name: string, entry: HistoryEntry): void {
-    this._historyInfo = { name, entry };
+  private _showHistoryInfo(name: string, entries: HistoryEntry[]): void {
+    this._historyInfo = { name, entries };
   }
 
   private _toggleMenu(entityId: string): void {
@@ -296,7 +296,7 @@ export class ParcelTrackerCard extends LitElement {
     }
 
     const menuOpen = this._openMenuEntityId === stateObj.entity_id;
-    const lastEntry = this._lastHistoryEntry(attrs);
+    const historyEntries = this._historyNewestFirst(attrs);
 
     return html`<div class="parcel">
       <div
@@ -314,14 +314,14 @@ export class ParcelTrackerCard extends LitElement {
           <span class="parcel-secondary" title=${hasError ? secondary : nothing}>${secondary}</span>
         </div>
         <span class="parcel-status" style="background: ${meta.color}">${this._formatState(stateObj)}</span>
-        ${lastEntry
+        ${historyEntries.length > 0
           ? html`<button
               class="icon-button info-button"
-              aria-label="Dernier statut"
-              title="Dernier statut"
+              aria-label="Historique"
+              title="Historique"
               @click=${(ev: Event) => {
                 ev.stopPropagation();
-                this._showHistoryInfo(name, lastEntry);
+                this._showHistoryInfo(name, historyEntries);
               }}
             >
               <ha-icon icon="mdi:information-outline"></ha-icon>
@@ -420,7 +420,6 @@ export class ParcelTrackerCard extends LitElement {
   private _renderHistoryInfo() {
     const info = this._historyInfo;
     if (!info) return nothing;
-    const date = formatDateTime(info.entry.date);
     return html`<ha-dialog
       open
       .heading=${info.name}
@@ -428,9 +427,16 @@ export class ParcelTrackerCard extends LitElement {
         this._historyInfo = null;
       }}
     >
-      <p>${info.entry.label ?? "Aucun libellé disponible."}</p>
-      ${date ? html`<p class="history-meta">${date}</p>` : nothing}
-      ${info.entry.location ? html`<p class="history-meta">${info.entry.location}</p>` : nothing}
+      <div class="history-list">
+        ${info.entries.map((entry) => {
+          const date = formatDateTime(entry.date);
+          return html`<div class="history-entry">
+            <p>${entry.label ?? "Aucun libellé disponible."}</p>
+            ${date ? html`<p class="history-meta">${date}</p>` : nothing}
+            ${entry.location ? html`<p class="history-meta">${entry.location}</p>` : nothing}
+          </div>`;
+        })}
+      </div>
       <ha-dialog-footer slot="footer">
         <button slot="primaryAction" @click=${() => (this._historyInfo = null)}>Fermer</button>
       </ha-dialog-footer>
@@ -627,6 +633,29 @@ export class ParcelTrackerCard extends LitElement {
       --mdc-icon-size: 20px;
     }
 
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: 60vh;
+      overflow-y: auto;
+      min-width: 240px;
+    }
+
+    .history-entry {
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--divider-color, #ccc);
+    }
+
+    .history-entry:last-child {
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+
+    .history-entry p {
+      margin: 0;
+    }
+
     ha-dialog p.history-meta {
       color: var(--secondary-text-color);
       font-size: 0.85em;
@@ -656,6 +685,15 @@ export class ParcelTrackerCard extends LitElement {
 
     .parcel-actions button ha-icon {
       --mdc-icon-size: 16px;
+    }
+
+    ha-dialog button {
+      font: inherit;
+      background: none;
+      border: none;
+      padding: 8px 12px;
+      cursor: pointer;
+      color: var(--primary-color);
     }
 
     .parcel-actions button.danger,
