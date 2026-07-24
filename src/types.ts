@@ -37,6 +37,7 @@ export interface ParcelAttributes {
   tracking_number: string;
   carrier: string;
   notes: string;
+  notify_target: string;
   history: HistoryEntry[];
   estimated_delivery: string | null;
   last_location: string | null;
