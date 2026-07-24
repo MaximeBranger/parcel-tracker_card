@@ -567,14 +567,14 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
         // attribute the integration exposes instead.
         return stateObj.attributes.parcel_id ?? "";
     }
-    _lastHistoryEntry(attrs) {
+    _historyNewestFirst(attrs) {
         const history = attrs.history;
         if (!Array.isArray(history) || history.length === 0)
-            return null;
-        return history[history.length - 1];
+            return [];
+        return [...history].reverse();
     }
-    _showHistoryInfo(name, entry) {
-        this._historyInfo = { name, entry };
+    _showHistoryInfo(name, entries) {
+        this._historyInfo = { name, entries };
     }
     _toggleMenu(entityId) {
         this._openMenuEntityId = this._openMenuEntityId === entityId ? null : entityId;
@@ -694,7 +694,7 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
             }
         }
         const menuOpen = this._openMenuEntityId === stateObj.entity_id;
-        const lastEntry = this._lastHistoryEntry(attrs);
+        const historyEntries = this._historyNewestFirst(attrs);
         return b `<div class="parcel">
       <div
         class="parcel-row"
@@ -712,14 +712,14 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
           <span class="parcel-secondary" title=${hasError ? secondary : A}>${secondary}</span>
         </div>
         <span class="parcel-status" style="background: ${meta.color}">${this._formatState(stateObj)}</span>
-        ${lastEntry
+        ${historyEntries.length > 0
             ? b `<button
               class="icon-button info-button"
-              aria-label="Dernier statut"
-              title="Dernier statut"
+              aria-label="Historique"
+              title="Historique"
               @click=${(ev) => {
                 ev.stopPropagation();
-                this._showHistoryInfo(name, lastEntry);
+                this._showHistoryInfo(name, historyEntries);
             }}
             >
               <ha-icon icon="mdi:information-outline"></ha-icon>
@@ -815,7 +815,6 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
         const info = this._historyInfo;
         if (!info)
             return A;
-        const date = formatDateTime(info.entry.date);
         return b `<ha-dialog
       open
       .heading=${info.name}
@@ -823,9 +822,16 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
             this._historyInfo = null;
         }}
     >
-      <p>${info.entry.label ?? "Aucun libellé disponible."}</p>
-      ${date ? b `<p class="history-meta">${date}</p>` : A}
-      ${info.entry.location ? b `<p class="history-meta">${info.entry.location}</p>` : A}
+      <div class="history-list">
+        ${info.entries.map((entry) => {
+            const date = formatDateTime(entry.date);
+            return b `<div class="history-entry">
+            <p>${entry.label ?? "Aucun libellé disponible."}</p>
+            ${date ? b `<p class="history-meta">${date}</p>` : A}
+            ${entry.location ? b `<p class="history-meta">${entry.location}</p>` : A}
+          </div>`;
+        })}
+      </div>
       <ha-dialog-footer slot="footer">
         <button slot="primaryAction" @click=${() => (this._historyInfo = null)}>Fermer</button>
       </ha-dialog-footer>
@@ -1022,6 +1028,29 @@ ParcelTrackerCard.styles = i$3 `
       --mdc-icon-size: 20px;
     }
 
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: 60vh;
+      overflow-y: auto;
+      min-width: 240px;
+    }
+
+    .history-entry {
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--divider-color, #ccc);
+    }
+
+    .history-entry:last-child {
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+
+    .history-entry p {
+      margin: 0;
+    }
+
     ha-dialog p.history-meta {
       color: var(--secondary-text-color);
       font-size: 0.85em;
@@ -1051,6 +1080,15 @@ ParcelTrackerCard.styles = i$3 `
 
     .parcel-actions button ha-icon {
       --mdc-icon-size: 16px;
+    }
+
+    ha-dialog button {
+      font: inherit;
+      background: none;
+      border: none;
+      padding: 8px 12px;
+      cursor: pointer;
+      color: var(--primary-color);
     }
 
     .parcel-actions button.danger,
