@@ -26,12 +26,18 @@ export interface HomeAssistantLike {
   ) => Promise<{ response?: T } | undefined>;
 }
 
+export interface HistoryEntry {
+  date: string | null;
+  label: string | null;
+  location: string | null;
+}
+
 export interface ParcelAttributes {
   parcel_id: string;
   tracking_number: string;
   carrier: string;
   notes: string;
-  history: unknown[];
+  history: HistoryEntry[];
   estimated_delivery: string | null;
   last_location: string | null;
   last_update: string | null;
