@@ -12,6 +12,7 @@ export interface UpsertTarget {
   carrier: string;
   name: string;
   notes: string;
+  notifyTarget: string;
 }
 
 declare global {
@@ -30,9 +31,11 @@ export class ParcelTrackerUpsertDialog extends LitElement {
   @state() private _carrier = CARRIERS[0].value;
   @state() private _name = "";
   @state() private _notes = "";
+  @state() private _notifyTarget = "";
   @state() private _submitting = false;
   @state() private _error: string | null = null;
   @state() private _availableCarriers: CarrierOption[] = CARRIERS;
+  @state() private _notifyTargets: string[] = [];
 
   private _originalTrackingNumber = "";
   private _originalCarrier = CARRIERS[0].value;
@@ -45,10 +48,13 @@ export class ParcelTrackerUpsertDialog extends LitElement {
     this._originalCarrier = CARRIERS[0].value;
     this._name = "";
     this._notes = "";
+    this._notifyTarget = "";
     this._error = null;
     this._availableCarriers = CARRIERS;
+    this._notifyTargets = [];
     this._open = true;
     void this._loadAvailableCarriers();
+    void this._loadNotifyTargets();
   }
 
   openForEdit(target: UpsertTarget): void {
@@ -59,10 +65,13 @@ export class ParcelTrackerUpsertDialog extends LitElement {
     this._originalCarrier = target.carrier;
     this._name = target.name;
     this._notes = target.notes;
+    this._notifyTarget = target.notifyTarget;
     this._error = null;
     this._availableCarriers = CARRIERS;
+    this._notifyTargets = [];
     this._open = true;
     void this._loadAvailableCarriers();
+    void this._loadNotifyTargets();
   }
 
   private async _loadAvailableCarriers(): Promise<void> {
@@ -108,6 +117,39 @@ export class ParcelTrackerUpsertDialog extends LitElement {
     this._availableCarriers = carriers.length > 0 ? carriers : CARRIERS;
   }
 
+  private async _loadNotifyTargets(): Promise<void> {
+    if (!this.hass) return;
+    const openedFor = this._parcelId;
+
+    let targets: string[] = [];
+    try {
+      const result = await this.hass.callService<{ targets: string[] }>(
+        DOMAIN,
+        "get_notify_targets",
+        {},
+        undefined,
+        true,
+        true,
+      );
+      if (result?.response?.targets) targets = result.response.targets;
+    } catch (err) {
+      console.error("parcel_tracker.get_notify_targets failed", err);
+    }
+
+    // The dialog may have been closed and reopened for a different parcel
+    // while this call was in flight.
+    if (!this._open || this._parcelId !== openedFor) return;
+
+    // A parcel's stored notify_target may no longer be a valid target (its
+    // entity/service was since removed) — keep it selectable so saving
+    // unrelated fields doesn't silently clear it.
+    if (this._notifyTarget && !targets.includes(this._notifyTarget)) {
+      targets = [this._notifyTarget, ...targets];
+    }
+
+    this._notifyTargets = targets;
+  }
+
   private _close(): void {
     this._open = false;
     this._submitting = false;
@@ -144,12 +186,14 @@ export class ParcelTrackerUpsertDialog extends LitElement {
               carrier: this._carrier,
               name: this._name,
               notes: this._notes,
+              notify_target: this._notifyTarget,
             }
           : {
               tracking_number: this._trackingNumber,
               carrier: this._carrier,
               name: this._name,
               notes: this._notes,
+              notify_target: this._notifyTarget,
             },
         undefined,
         true,
@@ -221,6 +265,22 @@ export class ParcelTrackerUpsertDialog extends LitElement {
         </div>
         ${this._renderField("name", "Nom", this._name, (v) => (this._name = v))}
         ${this._renderField("notes", "Notes", this._notes, (v) => (this._notes = v))}
+        <div class="field">
+          <label for="notify_target">Notifier à chaque changement de statut</label>
+          <select
+            id="notify_target"
+            .value=${this._notifyTarget}
+            @change=${(ev: Event) => (this._notifyTarget = (ev.target as HTMLSelectElement).value)}
+          >
+            <option value="" ?selected=${this._notifyTarget === ""}>Aucune notification</option>
+            ${this._notifyTargets.map(
+              (target) =>
+                html`<option value=${target} ?selected=${target === this._notifyTarget}>
+                  ${target}
+                </option>`,
+            )}
+          </select>
+        </div>
         ${this._error ? html`<p class="error">${this._error}</p>` : nothing}
       </div>
       <ha-dialog-footer slot="footer">

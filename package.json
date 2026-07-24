@@ -1,6 +1,6 @@
 {
   "name": "parcel-tracker-card",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Custom Lovelace card for the Parcel Tracker Home Assistant integration.",
   "main": "dist/parcel-tracker-card.js",
   "type": "module",

@@ -47,6 +47,7 @@ Attributs disponibles :
 
 * `tracking_number`
 * `carrier`
+* `notify_target`
 * `history`
 * `estimated_delivery`
 * `last_update`
@@ -96,6 +97,7 @@ Chaque événement de l'historique comprend :
 * `parcel_tracker.archive`
 * `parcel_tracker.get_history` — retourne l'historique des colis (actifs et archivés), filtrable par mois, année et transporteur. Voie d'accès principale pour une vue « archives » dans la carte, le registre d'entités HA n'étant pas prévu pour ce type de requête.
 * `parcel_tracker.get_configured_carriers` — retourne les transporteurs dont les identifiants sont configurés sur l'entrée (`{"carriers": [...]}`). Utilisé par le dialogue Ajouter/Modifier pour ne proposer que ces transporteurs dans le sélecteur — la carte n'a pas accès aux données de la config entry (clés API) pour le déterminer elle-même.
+* `parcel_tracker.get_notify_targets` — retourne les cibles de notification disponibles (`{"targets": [...]}`) : entités du domaine `notify` et services legacy encore enregistrés sous ce domaine. Utilisé par le dialogue Ajouter/Modifier pour peupler le sélecteur `notify_target`.
 
 `parcel_id` correspond au `unique_id` de l'entité (exposé par le registre d'entités HA), pas au `tracking_number`.
 
@@ -133,12 +135,15 @@ Un unique dialogue « upsert », implémenté avec `ha-dialog` (fourni par le fr
 
 Le sélecteur de transporteur n'affiche que les transporteurs configurés (appel à `parcel_tracker.get_configured_carriers` à l'ouverture du dialogue), à l'exception du transporteur déjà sélectionné en mode modification : celui-ci reste proposé même si ses identifiants ont depuis été retirés de la configuration, pour ne pas forcer un changement de transporteur non désiré en modifiant un autre champ — même règle que `ParcelTrackerOptionsFlow.async_step_edit_parcel` côté backend. Si l'appel échoue ou si aucun transporteur n'est configuré, la carte retombe sur la liste complète plutôt que de bloquer le formulaire.
 
+Le sélecteur de cible de notification suit la même logique (appel à `parcel_tracker.get_notify_targets`, avec un premier choix « Aucune notification » correspondant à une valeur vide) : la cible déjà sélectionnée en mode modification reste proposée même si elle a disparu de la liste retournée (entité/service supprimé depuis), pour ne pas l'effacer silencieusement en modifiant un autre champ.
+
 Champs, alignés sur ceux acceptés par les services `add`/`update` :
 
 * `tracking_number` — requis.
 * `carrier` — sélection fermée parmi `laposte`, `fedex`, `dhl`, `ups`, `mondial_relay`.
 * `name`
 * `notes`
+* `notify_target` — sélection parmi les cibles retournées par `parcel_tracker.get_notify_targets`, ou « Aucune notification ».
 
 Comportement à la soumission :
 

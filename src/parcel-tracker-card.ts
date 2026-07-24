@@ -199,6 +199,7 @@ export class ParcelTrackerCard extends LitElement {
       carrier: attrs.carrier,
       name,
       notes: attrs.notes,
+      notifyTarget: attrs.notify_target,
     });
   }
 
