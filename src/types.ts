@@ -52,3 +52,8 @@ export interface ParcelTrackerCardConfig {
   title?: string;
   editable?: boolean;
 }
+
+export interface ParcelTrackerStatsCardConfig {
+  type: string;
+  title?: string;
+}

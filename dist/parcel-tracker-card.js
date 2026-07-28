@@ -129,6 +129,25 @@ function globalCounterColor(translationKey) {
     return GLOBAL_COUNTER_COLORS[translationKey] ?? "var(--disabled-text-color)";
 }
 
+function translationKey(hass, stateObj) {
+    return hass?.entities[stateObj.entity_id]?.translation_key ?? "";
+}
+function entriesByTranslationKey(hass, platform, keys) {
+    if (!hass)
+        return [];
+    const result = [];
+    for (const entry of Object.values(hass.entities)) {
+        if (entry.platform !== platform)
+            continue;
+        if (keys && !keys.has(entry.translation_key ?? ""))
+            continue;
+        const stateObj = hass.states[entry.entity_id];
+        if (stateObj)
+            result.push(stateObj);
+    }
+    return result;
+}
+
 // Mirrors ALL_CARRIERS / CARRIER_LABELS in the parcel_tracker integration's const.py.
 const CARRIERS = [
     { value: "laposte", label: "La Poste" },
@@ -453,6 +472,131 @@ ParcelTrackerUpsertDialog = __decorate([
     t("parcel-tracker-upsert-dialog")
 ], ParcelTrackerUpsertDialog);
 
+const PLATFORM$1 = "parcel_tracker";
+let ParcelTrackerStatsCard = class ParcelTrackerStatsCard extends i {
+    setConfig(config) {
+        this._config = config;
+    }
+    static getStubConfig() {
+        return { type: "custom:parcel-tracker-stats-card" };
+    }
+    getCardSize() {
+        return 1;
+    }
+    _counters() {
+        const keys = new Set(GLOBAL_COUNTER_TRANSLATION_KEYS);
+        return entriesByTranslationKey(this.hass, PLATFORM$1, keys).sort((a, b) => GLOBAL_COUNTER_TRANSLATION_KEYS.indexOf(translationKey(this.hass, a)) -
+            GLOBAL_COUNTER_TRANSLATION_KEYS.indexOf(translationKey(this.hass, b)));
+    }
+    _counterLabel(stateObj) {
+        const key = translationKey(this.hass, stateObj);
+        const localized = this.hass?.localize?.(`component.${PLATFORM$1}.entity.sensor.${key}.name`);
+        return localized || String(stateObj.attributes.friendly_name ?? stateObj.entity_id);
+    }
+    render() {
+        if (!this.hass || !this._config)
+            return A;
+        const counters = this._counters();
+        return b `<ha-card>
+      ${this._config.title
+            ? b `<div class="card-header">${this._config.title}</div>`
+            : A}
+      <div class="card-content">
+        ${counters.length === 0
+            ? b `<div class="empty">Aucun compteur disponible.</div>`
+            : b `<div class="counters">
+              ${counters.map((stateObj) => {
+                const color = globalCounterColor(translationKey(this.hass, stateObj));
+                return b `<div class="counter-tile">
+                  <div class="counter-icon" style="background: ${color}">
+                    <ha-icon icon=${globalCounterIcon(translationKey(this.hass, stateObj))}></ha-icon>
+                  </div>
+                  <span class="counter-value">${stateObj.state}</span>
+                  <span class="counter-label">${this._counterLabel(stateObj)}</span>
+                </div>`;
+            })}
+            </div>`}
+      </div>
+    </ha-card>`;
+    }
+};
+ParcelTrackerStatsCard.styles = i$3 `
+    .card-header {
+      padding: 16px 16px 0;
+      font-size: 1.2em;
+      font-weight: 400;
+      color: var(--ha-card-header-color, var(--primary-text-color));
+    }
+
+    .card-content {
+      padding: 8px 0;
+    }
+
+    .empty {
+      padding: 8px 16px 16px;
+      color: var(--secondary-text-color);
+    }
+
+    .counters {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+      gap: 8px;
+      padding: 12px 16px 16px;
+    }
+
+    .counter-tile {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 12px 4px;
+      border-radius: 12px;
+      background: var(--secondary-background-color);
+      text-align: center;
+    }
+
+    .counter-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      color: var(--card-background-color, #fff);
+    }
+
+    .counter-icon ha-icon {
+      --mdc-icon-size: 18px;
+    }
+
+    .counter-value {
+      font-size: 1.3em;
+      font-weight: 600;
+      color: var(--primary-text-color);
+    }
+
+    .counter-label {
+      font-size: 0.75em;
+      color: var(--secondary-text-color);
+      line-height: 1.2;
+    }
+  `;
+__decorate([
+    n({ attribute: false })
+], ParcelTrackerStatsCard.prototype, "hass", void 0);
+__decorate([
+    r()
+], ParcelTrackerStatsCard.prototype, "_config", void 0);
+ParcelTrackerStatsCard = __decorate([
+    t("parcel-tracker-stats-card")
+], ParcelTrackerStatsCard);
+window.customCards = window.customCards || [];
+window.customCards.push({
+    type: "parcel-tracker-stats-card",
+    name: "Parcel Tracker Stats Card",
+    description: "Display global parcel counters exposed by the Parcel Tracker integration.",
+});
+
 const PLATFORM = "parcel_tracker";
 const PARCEL_TRANSLATION_KEY = "parcel";
 function fireEvent(target, type, detail) {
@@ -508,32 +652,8 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
     getCardSize() {
         return 1 + this._parcelEntities().length;
     }
-    _entriesByTranslationKey(keys) {
-        const hass = this.hass;
-        if (!hass)
-            return [];
-        const result = [];
-        for (const entry of Object.values(hass.entities)) {
-            if (entry.platform !== PLATFORM)
-                continue;
-            if (keys && !keys.has(entry.translation_key ?? ""))
-                continue;
-            const stateObj = hass.states[entry.entity_id];
-            if (stateObj)
-                result.push(stateObj);
-        }
-        return result;
-    }
-    _globalCounters() {
-        const keys = new Set(GLOBAL_COUNTER_TRANSLATION_KEYS);
-        return this._entriesByTranslationKey(keys).sort((a, b) => GLOBAL_COUNTER_TRANSLATION_KEYS.indexOf(this._translationKey(a)) -
-            GLOBAL_COUNTER_TRANSLATION_KEYS.indexOf(this._translationKey(b)));
-    }
-    _translationKey(stateObj) {
-        return this.hass?.entities[stateObj.entity_id]?.translation_key ?? "";
-    }
     _parcelEntities() {
-        const parcels = this._entriesByTranslationKey(new Set([PARCEL_TRANSLATION_KEY]));
+        const parcels = entriesByTranslationKey(this.hass, PLATFORM, new Set([PARCEL_TRANSLATION_KEY]));
         return parcels.sort((a, b) => {
             const aDelivered = a.state === "delivered";
             const bDelivered = b.state === "delivered";
@@ -647,28 +767,6 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
         catch (err) {
             console.error("parcel_tracker.refresh failed", err);
         }
-    }
-    _counterLabel(stateObj) {
-        const translationKey = this._translationKey(stateObj);
-        const localized = this.hass?.localize?.(`component.${PLATFORM}.entity.sensor.${translationKey}.name`);
-        return localized || String(stateObj.attributes.friendly_name ?? stateObj.entity_id);
-    }
-    _renderCounters() {
-        const counters = this._globalCounters();
-        if (counters.length === 0)
-            return A;
-        return b `<div class="counters">
-      ${counters.map((stateObj) => {
-            const color = globalCounterColor(this._translationKey(stateObj));
-            return b `<div class="counter-tile">
-          <div class="counter-icon" style="background: ${color}">
-            <ha-icon icon=${globalCounterIcon(this._translationKey(stateObj))}></ha-icon>
-          </div>
-          <span class="counter-value">${stateObj.state}</span>
-          <span class="counter-label">${this._counterLabel(stateObj)}</span>
-        </div>`;
-        })}
-    </div>`;
     }
     _renderParcelRow(stateObj) {
         const attrs = stateObj.attributes;
@@ -795,7 +893,6 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
             : A}
       </div>
       <div class="card-content">
-        ${this._renderCounters()}
         ${parcels.length === 0
             ? b `<div class="empty">
               ${editable
@@ -919,50 +1016,6 @@ ParcelTrackerCard.styles = i$3 `
 
     .card-content {
       padding: 0 0 8px;
-    }
-
-    .counters {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
-      gap: 8px;
-      padding: 12px 16px 16px;
-    }
-
-    .counter-tile {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      padding: 12px 4px;
-      border-radius: 12px;
-      background: var(--secondary-background-color);
-      text-align: center;
-    }
-
-    .counter-icon {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      color: var(--card-background-color, #fff);
-    }
-
-    .counter-icon ha-icon {
-      --mdc-icon-size: 18px;
-    }
-
-    .counter-value {
-      font-size: 1.3em;
-      font-weight: 600;
-      color: var(--primary-text-color);
-    }
-
-    .counter-label {
-      font-size: 0.75em;
-      color: var(--secondary-text-color);
-      line-height: 1.2;
     }
 
     .empty {

@@ -67,6 +67,13 @@ Un colis archivé conserve son entité (désactivée) — elle n'apparaît plus 
 
 Ces capteurs ne comptent que les colis **non archivés** — utilisables par la carte pour des vues de synthèse (compteurs, badges).
 
+### Deux cartes distinctes
+
+Le package expose deux cartes Lovelace, dans le même bundle JS (une seule ressource à ajouter), mais deux balises `type` distinctes :
+
+* **`parcel-tracker-card`** — liste des colis suivis, avec gestion (ajout/modification/archivage/suppression). Ne contient plus les compteurs globaux.
+* **`parcel-tracker-stats-card`** — les 5 compteurs globaux uniquement, en lecture seule. Carte séparée pour permettre de la placer ailleurs dans le dashboard (ou de ne pas l'ajouter du tout) sans imposer la place qu'elle prend à côté de la liste des colis.
+
 ### Statuts supportés
 
 * Créé

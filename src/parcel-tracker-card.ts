@@ -1,14 +1,8 @@
 import { LitElement, css, html, nothing } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 
-import {
-  DEFAULT_STATUS_META,
-  ERROR_STATUS_META,
-  GLOBAL_COUNTER_TRANSLATION_KEYS,
-  STATUS_META,
-  globalCounterColor,
-  globalCounterIcon,
-} from "./status";
+import { DEFAULT_STATUS_META, ERROR_STATUS_META, STATUS_META } from "./status";
+import { entriesByTranslationKey, translationKey } from "./hass-entities";
 import type {
   HassEntity,
   HistoryEntry,
@@ -18,6 +12,7 @@ import type {
 } from "./types";
 import "./upsert-dialog";
 import type { ParcelTrackerUpsertDialog } from "./upsert-dialog";
+import "./parcel-tracker-stats-card";
 
 const PLATFORM = "parcel_tracker";
 const PARCEL_TRANSLATION_KEY = "parcel";
@@ -102,33 +97,8 @@ export class ParcelTrackerCard extends LitElement {
     return 1 + this._parcelEntities().length;
   }
 
-  private _entriesByTranslationKey(keys: Set<string> | null): HassEntity[] {
-    const hass = this.hass;
-    if (!hass) return [];
-    const result: HassEntity[] = [];
-    for (const entry of Object.values(hass.entities)) {
-      if (entry.platform !== PLATFORM) continue;
-      if (keys && !keys.has(entry.translation_key ?? "")) continue;
-      const stateObj = hass.states[entry.entity_id];
-      if (stateObj) result.push(stateObj);
-    }
-    return result;
-  }
-
-  private _globalCounters(): HassEntity[] {
-    const keys = new Set(GLOBAL_COUNTER_TRANSLATION_KEYS);
-    return this._entriesByTranslationKey(keys).sort(
-      (a, b) => GLOBAL_COUNTER_TRANSLATION_KEYS.indexOf(this._translationKey(a)) -
-        GLOBAL_COUNTER_TRANSLATION_KEYS.indexOf(this._translationKey(b)),
-    );
-  }
-
-  private _translationKey(stateObj: HassEntity): string {
-    return this.hass?.entities[stateObj.entity_id]?.translation_key ?? "";
-  }
-
   private _parcelEntities(): HassEntity[] {
-    const parcels = this._entriesByTranslationKey(new Set([PARCEL_TRANSLATION_KEY]));
+    const parcels = entriesByTranslationKey(this.hass, PLATFORM, new Set([PARCEL_TRANSLATION_KEY]));
     return parcels.sort((a, b) => {
       const aDelivered = a.state === "delivered";
       const bDelivered = b.state === "delivered";
@@ -247,31 +217,6 @@ export class ParcelTrackerCard extends LitElement {
     } catch (err) {
       console.error("parcel_tracker.refresh failed", err);
     }
-  }
-
-  private _counterLabel(stateObj: HassEntity): string {
-    const translationKey = this._translationKey(stateObj);
-    const localized = this.hass?.localize?.(
-      `component.${PLATFORM}.entity.sensor.${translationKey}.name`,
-    );
-    return localized || String(stateObj.attributes.friendly_name ?? stateObj.entity_id);
-  }
-
-  private _renderCounters() {
-    const counters = this._globalCounters();
-    if (counters.length === 0) return nothing;
-    return html`<div class="counters">
-      ${counters.map((stateObj) => {
-        const color = globalCounterColor(this._translationKey(stateObj));
-        return html`<div class="counter-tile">
-          <div class="counter-icon" style="background: ${color}">
-            <ha-icon icon=${globalCounterIcon(this._translationKey(stateObj))}></ha-icon>
-          </div>
-          <span class="counter-value">${stateObj.state}</span>
-          <span class="counter-label">${this._counterLabel(stateObj)}</span>
-        </div>`;
-      })}
-    </div>`;
   }
 
   private _renderParcelRow(stateObj: HassEntity) {
@@ -400,7 +345,6 @@ export class ParcelTrackerCard extends LitElement {
           : nothing}
       </div>
       <div class="card-content">
-        ${this._renderCounters()}
         ${parcels.length === 0
           ? html`<div class="empty">
               ${editable
@@ -524,50 +468,6 @@ export class ParcelTrackerCard extends LitElement {
 
     .card-content {
       padding: 0 0 8px;
-    }
-
-    .counters {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
-      gap: 8px;
-      padding: 12px 16px 16px;
-    }
-
-    .counter-tile {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      padding: 12px 4px;
-      border-radius: 12px;
-      background: var(--secondary-background-color);
-      text-align: center;
-    }
-
-    .counter-icon {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      color: var(--card-background-color, #fff);
-    }
-
-    .counter-icon ha-icon {
-      --mdc-icon-size: 18px;
-    }
-
-    .counter-value {
-      font-size: 1.3em;
-      font-weight: 600;
-      color: var(--primary-text-color);
-    }
-
-    .counter-label {
-      font-size: 0.75em;
-      color: var(--secondary-text-color);
-      line-height: 1.2;
     }
 
     .empty {

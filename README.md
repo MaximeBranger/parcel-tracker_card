@@ -38,6 +38,10 @@ Voir [SPECIFICATIONS.md](SPECIFICATIONS.md) pour la spécification complète.
 
 ## Utilisation
 
+Ce package fournit deux cartes distinctes, séparées pour ne pas imposer les compteurs globaux à ceux qui veulent juste la liste des colis :
+
+### Liste des colis — `parcel-tracker-card`
+
 Ajouter la carte à un tableau de bord via l'éditeur de dashboard (**Ajouter une carte → Parcel Tracker Card**) ou en YAML :
 
 ```yaml
@@ -52,6 +56,20 @@ Options de configuration (toutes facultatives) :
 | --- | --- | --- | --- |
 | `title` | string | `Parcel Tracker` | Titre affiché dans l'en-tête de la carte. |
 | `editable` | boolean | `true` | Si `false`, masque les actions de gestion (ajout, modification, archivage, suppression, rafraîchissement) pour un usage en lecture seule (ex. tableau de bord partagé/kiosque). |
+
+### Compteurs globaux — `parcel-tracker-stats-card`
+
+Carte distincte affichant les 5 compteurs globaux (`parcels_active`, `parcels_delivered`, `parcels_waiting`, `parcels_today`, `parcels_late`) exposés par l'intégration. À ajouter séparément si vous souhaitez ces métriques, par exemple dans une autre section du tableau de bord :
+
+```yaml
+type: custom:parcel-tracker-stats-card
+```
+
+Options de configuration (toutes facultatives) :
+
+| Option | Type | Défaut | Description |
+| --- | --- | --- | --- |
+| `title` | string | *(aucun)* | Titre affiché dans l'en-tête de la carte. Omis par défaut pour rester compacte. |
 
 ## Développement
 
