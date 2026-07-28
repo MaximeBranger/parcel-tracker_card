@@ -87,14 +87,14 @@ const e$1=(e,t,c)=>(c.configurable=true,c.enumerable=true,Reflect.decorate&&"obj
 
 const STATUS_META = {
     created: { icon: "mdi:package-variant-closed", color: "var(--disabled-text-color)" },
-    taken_in_charge: { icon: "mdi:hand-back-right-outline", color: "var(--info-color)" },
+    taken_in_charge: { icon: "mdi:package-up", color: "var(--info-color)" },
     in_transit: { icon: "mdi:truck-fast-outline", color: "var(--info-color)" },
     at_sorting_center: { icon: "mdi:warehouse", color: "var(--info-color)" },
     out_for_delivery: { icon: "mdi:truck-delivery-outline", color: "var(--info-color)" },
     delivered: { icon: "mdi:package-variant-closed-check", color: "var(--success-color)" },
     delayed: { icon: "mdi:clock-alert-outline", color: "var(--warning-color)" },
-    incident: { icon: "mdi:alert-circle-outline", color: "var(--error-color)" },
-    returned_to_sender: { icon: "mdi:keyboard-return", color: "var(--error-color)" },
+    incident: { icon: "mdi:alert-octagon-outline", color: "var(--error-color)" },
+    returned_to_sender: { icon: "mdi:package-variant-closed-remove", color: "var(--error-color)" },
 };
 const DEFAULT_STATUS_META = {
     icon: "mdi:package-variant",
