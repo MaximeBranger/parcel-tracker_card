@@ -73,12 +73,29 @@ export class ParcelTrackerCard extends LitElement {
   @property({ attribute: false }) hass?: HomeAssistantLike;
 
   @state() private _config?: ParcelTrackerCardConfig;
+  @state() private _openMenuEntityId: string | null = null;
   @state() private _pendingDelete: PendingDelete | null = null;
   @state() private _deleteSubmitting = false;
   @state() private _deleteError: string | null = null;
   @state() private _historyInfo: { name: string; entries: HistoryEntry[] } | null = null;
 
   @query("parcel-tracker-upsert-dialog") private _upsertDialog?: ParcelTrackerUpsertDialog;
+
+  // Closes the actions dropdown on any click that wasn't already handled
+  // (and stopped) by the toggle button or one of the menu's own actions.
+  private _closeMenu = (): void => {
+    this._openMenuEntityId = null;
+  };
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    window.addEventListener("click", this._closeMenu);
+  }
+
+  disconnectedCallback(): void {
+    window.removeEventListener("click", this._closeMenu);
+    super.disconnectedCallback();
+  }
 
   setConfig(config: ParcelTrackerCardConfig): void {
     this._config = config;
@@ -143,7 +160,12 @@ export class ParcelTrackerCard extends LitElement {
     this._historyInfo = { name, entries };
   }
 
+  private _toggleMenu(entityId: string): void {
+    this._openMenuEntityId = this._openMenuEntityId === entityId ? null : entityId;
+  }
+
   private _openAdd(): void {
+    this._openMenuEntityId = null;
     this._upsertDialog?.openForAdd();
   }
 
@@ -156,6 +178,7 @@ export class ParcelTrackerCard extends LitElement {
     const strippedName = stripDevicePrefix(String(stateObj.attributes.friendly_name ?? ""));
     const name = strippedName === attrs.tracking_number ? "" : strippedName;
 
+    this._openMenuEntityId = null;
     this._upsertDialog?.openForEdit({
       parcelId: this._parcelId(stateObj),
       trackingNumber: attrs.tracking_number,
@@ -167,6 +190,7 @@ export class ParcelTrackerCard extends LitElement {
   }
 
   private async _archive(stateObj: HassEntity): Promise<void> {
+    this._openMenuEntityId = null;
     try {
       await this.hass?.callService(PLATFORM, "archive", {
         parcel_id: this._parcelId(stateObj),
@@ -177,6 +201,7 @@ export class ParcelTrackerCard extends LitElement {
   }
 
   private _confirmDelete(stateObj: HassEntity): void {
+    this._openMenuEntityId = null;
     const name = stripDevicePrefix(String(stateObj.attributes.friendly_name ?? stateObj.entity_id));
     this._deleteError = null;
     this._pendingDelete = {
@@ -268,44 +293,38 @@ export class ParcelTrackerCard extends LitElement {
   }
 
   private _renderActionsMenu(stateObj: HassEntity) {
-    return html`<ha-button-menu @click=${(ev: Event) => ev.stopPropagation()}>
-      <button slot="trigger" class="icon-button" aria-label="Actions">
+    const menuOpen = this._openMenuEntityId === stateObj.entity_id;
+    return html`<div class="menu-wrapper">
+      <button
+        class="icon-button"
+        aria-label="Actions"
+        aria-expanded=${menuOpen}
+        @click=${(ev: Event) => {
+          ev.stopPropagation();
+          this._toggleMenu(stateObj.entity_id);
+        }}
+      >
         <ha-icon icon="mdi:dots-vertical"></ha-icon>
       </button>
-      <mwc-list-item
-        graphic="icon"
-        @click=${(ev: Event) => {
-          ev.stopPropagation();
-          this._openEdit(stateObj);
-        }}
-      >
-        <ha-icon slot="graphic" icon="mdi:pencil-outline"></ha-icon>
-        Modifier
-      </mwc-list-item>
-      ${stateObj.state === "delivered"
-        ? html`<mwc-list-item
-            graphic="icon"
-            @click=${(ev: Event) => {
-              ev.stopPropagation();
-              this._archive(stateObj);
-            }}
-          >
-            <ha-icon slot="graphic" icon="mdi:archive-outline"></ha-icon>
-            Archiver
-          </mwc-list-item>`
+      ${menuOpen
+        ? html`<div class="dropdown-menu" @click=${(ev: Event) => ev.stopPropagation()}>
+            <button @click=${() => this._openEdit(stateObj)}>
+              <ha-icon icon="mdi:pencil-outline"></ha-icon>
+              Modifier
+            </button>
+            ${stateObj.state === "delivered"
+              ? html`<button @click=${() => this._archive(stateObj)}>
+                  <ha-icon icon="mdi:archive-outline"></ha-icon>
+                  Archiver
+                </button>`
+              : nothing}
+            <button class="danger" @click=${() => this._confirmDelete(stateObj)}>
+              <ha-icon icon="mdi:delete-outline"></ha-icon>
+              Supprimer
+            </button>
+          </div>`
         : nothing}
-      <mwc-list-item
-        graphic="icon"
-        class="danger"
-        @click=${(ev: Event) => {
-          ev.stopPropagation();
-          this._confirmDelete(stateObj);
-        }}
-      >
-        <ha-icon slot="graphic" icon="mdi:delete-outline" style="color: var(--error-color)"></ha-icon>
-        Supprimer
-      </mwc-list-item>
-    </ha-button-menu>`;
+    </div>`;
   }
 
   render() {
@@ -546,9 +565,48 @@ export class ParcelTrackerCard extends LitElement {
       margin-top: 4px;
     }
 
-    mwc-list-item.danger {
+    .menu-wrapper {
+      position: relative;
+    }
+
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 170px;
+      margin-top: 4px;
+      padding: 4px;
+      background: var(--card-background-color, #fff);
+      border-radius: 8px;
+      box-shadow: var(--ha-card-box-shadow, 0 2px 8px rgba(0, 0, 0, 0.3));
+    }
+
+    .dropdown-menu button {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      font: inherit;
+      font-size: 0.9em;
+      background: none;
+      color: var(--primary-text-color);
+      border: none;
+      border-radius: 6px;
+      padding: 8px 10px;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .dropdown-menu button:hover {
+      background: var(--secondary-background-color);
+    }
+
+    .dropdown-menu button.danger {
       color: var(--error-color);
-      --mdc-theme-text-primary-on-background: var(--error-color);
     }
 
     ha-dialog button {
