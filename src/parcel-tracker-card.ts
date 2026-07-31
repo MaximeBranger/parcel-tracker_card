@@ -73,7 +73,6 @@ export class ParcelTrackerCard extends LitElement {
   @property({ attribute: false }) hass?: HomeAssistantLike;
 
   @state() private _config?: ParcelTrackerCardConfig;
-  @state() private _openMenuEntityId: string | null = null;
   @state() private _pendingDelete: PendingDelete | null = null;
   @state() private _deleteSubmitting = false;
   @state() private _deleteError: string | null = null;
@@ -144,12 +143,7 @@ export class ParcelTrackerCard extends LitElement {
     this._historyInfo = { name, entries };
   }
 
-  private _toggleMenu(entityId: string): void {
-    this._openMenuEntityId = this._openMenuEntityId === entityId ? null : entityId;
-  }
-
   private _openAdd(): void {
-    this._openMenuEntityId = null;
     this._upsertDialog?.openForAdd();
   }
 
@@ -162,7 +156,6 @@ export class ParcelTrackerCard extends LitElement {
     const strippedName = stripDevicePrefix(String(stateObj.attributes.friendly_name ?? ""));
     const name = strippedName === attrs.tracking_number ? "" : strippedName;
 
-    this._openMenuEntityId = null;
     this._upsertDialog?.openForEdit({
       parcelId: this._parcelId(stateObj),
       trackingNumber: attrs.tracking_number,
@@ -174,7 +167,6 @@ export class ParcelTrackerCard extends LitElement {
   }
 
   private async _archive(stateObj: HassEntity): Promise<void> {
-    this._openMenuEntityId = null;
     try {
       await this.hass?.callService(PLATFORM, "archive", {
         parcel_id: this._parcelId(stateObj),
@@ -185,7 +177,6 @@ export class ParcelTrackerCard extends LitElement {
   }
 
   private _confirmDelete(stateObj: HassEntity): void {
-    this._openMenuEntityId = null;
     const name = stripDevicePrefix(String(stateObj.attributes.friendly_name ?? stateObj.entity_id));
     this._deleteError = null;
     this._pendingDelete = {
@@ -240,7 +231,6 @@ export class ParcelTrackerCard extends LitElement {
       }
     }
 
-    const menuOpen = this._openMenuEntityId === stateObj.entity_id;
     const historyEntries = this._historyNewestFirst(attrs);
 
     return html`<div class="parcel">
@@ -272,56 +262,50 @@ export class ParcelTrackerCard extends LitElement {
               <ha-icon icon="mdi:information-outline"></ha-icon>
             </button>`
           : nothing}
-        ${this._editable
-          ? html`<button
-              class="icon-button"
-              aria-label="Actions"
-              @click=${(ev: Event) => {
-                ev.stopPropagation();
-                this._toggleMenu(stateObj.entity_id);
-              }}
-            >
-              <ha-icon icon="mdi:dots-vertical"></ha-icon>
-            </button>`
-          : nothing}
+        ${this._editable ? this._renderActionsMenu(stateObj) : nothing}
       </div>
-      ${menuOpen ? this._renderRowActions(stateObj) : nothing}
     </div>`;
   }
 
-  private _renderRowActions(stateObj: HassEntity) {
-    return html`<div class="parcel-actions">
-      <button
+  private _renderActionsMenu(stateObj: HassEntity) {
+    return html`<ha-button-menu @click=${(ev: Event) => ev.stopPropagation()}>
+      <button slot="trigger" class="icon-button" aria-label="Actions">
+        <ha-icon icon="mdi:dots-vertical"></ha-icon>
+      </button>
+      <mwc-list-item
+        graphic="icon"
         @click=${(ev: Event) => {
           ev.stopPropagation();
           this._openEdit(stateObj);
         }}
       >
-        <ha-icon icon="mdi:pencil-outline"></ha-icon>
+        <ha-icon slot="graphic" icon="mdi:pencil-outline"></ha-icon>
         Modifier
-      </button>
+      </mwc-list-item>
       ${stateObj.state === "delivered"
-        ? html`<button
+        ? html`<mwc-list-item
+            graphic="icon"
             @click=${(ev: Event) => {
               ev.stopPropagation();
               this._archive(stateObj);
             }}
           >
-            <ha-icon icon="mdi:archive-outline"></ha-icon>
+            <ha-icon slot="graphic" icon="mdi:archive-outline"></ha-icon>
             Archiver
-          </button>`
+          </mwc-list-item>`
         : nothing}
-      <button
+      <mwc-list-item
+        graphic="icon"
         class="danger"
         @click=${(ev: Event) => {
           ev.stopPropagation();
           this._confirmDelete(stateObj);
         }}
       >
-        <ha-icon icon="mdi:delete-outline"></ha-icon>
+        <ha-icon slot="graphic" icon="mdi:delete-outline" style="color: var(--error-color)"></ha-icon>
         Supprimer
-      </button>
-    </div>`;
+      </mwc-list-item>
+    </ha-button-menu>`;
   }
 
   render() {
@@ -562,29 +546,9 @@ export class ParcelTrackerCard extends LitElement {
       margin-top: 4px;
     }
 
-    .parcel-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-      padding: 0 16px 8px 56px;
-    }
-
-    .parcel-actions button {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font: inherit;
-      font-size: 0.85em;
-      background: var(--secondary-background-color);
-      color: var(--primary-text-color);
-      border: none;
-      border-radius: 8px;
-      padding: 6px 10px;
-      cursor: pointer;
-    }
-
-    .parcel-actions button ha-icon {
-      --mdc-icon-size: 16px;
+    mwc-list-item.danger {
+      color: var(--error-color);
+      --mdc-theme-text-primary-on-background: var(--error-color);
     }
 
     ha-dialog button {
@@ -596,7 +560,6 @@ export class ParcelTrackerCard extends LitElement {
       color: var(--primary-color);
     }
 
-    .parcel-actions button.danger,
     ha-dialog button.danger {
       color: var(--error-color);
     }

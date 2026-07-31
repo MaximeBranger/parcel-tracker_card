@@ -635,7 +635,6 @@ function stripDevicePrefix(name) {
 let ParcelTrackerCard = class ParcelTrackerCard extends i {
     constructor() {
         super(...arguments);
-        this._openMenuEntityId = null;
         this._pendingDelete = null;
         this._deleteSubmitting = false;
         this._deleteError = null;
@@ -697,11 +696,7 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
     _showHistoryInfo(name, entries) {
         this._historyInfo = { name, entries };
     }
-    _toggleMenu(entityId) {
-        this._openMenuEntityId = this._openMenuEntityId === entityId ? null : entityId;
-    }
     _openAdd() {
-        this._openMenuEntityId = null;
         this._upsertDialog?.openForAdd();
     }
     _openEdit(stateObj) {
@@ -712,7 +707,6 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
         // that's an acceptable edge case for prefilling the edit form.
         const strippedName = stripDevicePrefix(String(stateObj.attributes.friendly_name ?? ""));
         const name = strippedName === attrs.tracking_number ? "" : strippedName;
-        this._openMenuEntityId = null;
         this._upsertDialog?.openForEdit({
             parcelId: this._parcelId(stateObj),
             trackingNumber: attrs.tracking_number,
@@ -723,7 +717,6 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
         });
     }
     async _archive(stateObj) {
-        this._openMenuEntityId = null;
         try {
             await this.hass?.callService(PLATFORM, "archive", {
                 parcel_id: this._parcelId(stateObj),
@@ -734,7 +727,6 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
         }
     }
     _confirmDelete(stateObj) {
-        this._openMenuEntityId = null;
         const name = stripDevicePrefix(String(stateObj.attributes.friendly_name ?? stateObj.entity_id));
         this._deleteError = null;
         this._pendingDelete = {
@@ -792,7 +784,6 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
                 secondary += ` · Depuis ${attrs.days_since_shipping} j.`;
             }
         }
-        const menuOpen = this._openMenuEntityId === stateObj.entity_id;
         const historyEntries = this._historyNewestFirst(attrs);
         return b `<div class="parcel">
       <div
@@ -824,55 +815,49 @@ let ParcelTrackerCard = class ParcelTrackerCard extends i {
               <ha-icon icon="mdi:information-outline"></ha-icon>
             </button>`
             : A}
-        ${this._editable
-            ? b `<button
-              class="icon-button"
-              aria-label="Actions"
-              @click=${(ev) => {
-                ev.stopPropagation();
-                this._toggleMenu(stateObj.entity_id);
-            }}
-            >
-              <ha-icon icon="mdi:dots-vertical"></ha-icon>
-            </button>`
-            : A}
+        ${this._editable ? this._renderActionsMenu(stateObj) : A}
       </div>
-      ${menuOpen ? this._renderRowActions(stateObj) : A}
     </div>`;
     }
-    _renderRowActions(stateObj) {
-        return b `<div class="parcel-actions">
-      <button
+    _renderActionsMenu(stateObj) {
+        return b `<ha-button-menu @click=${(ev) => ev.stopPropagation()}>
+      <button slot="trigger" class="icon-button" aria-label="Actions">
+        <ha-icon icon="mdi:dots-vertical"></ha-icon>
+      </button>
+      <mwc-list-item
+        graphic="icon"
         @click=${(ev) => {
             ev.stopPropagation();
             this._openEdit(stateObj);
         }}
       >
-        <ha-icon icon="mdi:pencil-outline"></ha-icon>
+        <ha-icon slot="graphic" icon="mdi:pencil-outline"></ha-icon>
         Modifier
-      </button>
+      </mwc-list-item>
       ${stateObj.state === "delivered"
-            ? b `<button
+            ? b `<mwc-list-item
+            graphic="icon"
             @click=${(ev) => {
                 ev.stopPropagation();
                 this._archive(stateObj);
             }}
           >
-            <ha-icon icon="mdi:archive-outline"></ha-icon>
+            <ha-icon slot="graphic" icon="mdi:archive-outline"></ha-icon>
             Archiver
-          </button>`
+          </mwc-list-item>`
             : A}
-      <button
+      <mwc-list-item
+        graphic="icon"
         class="danger"
         @click=${(ev) => {
             ev.stopPropagation();
             this._confirmDelete(stateObj);
         }}
       >
-        <ha-icon icon="mdi:delete-outline"></ha-icon>
+        <ha-icon slot="graphic" icon="mdi:delete-outline" style="color: var(--error-color)"></ha-icon>
         Supprimer
-      </button>
-    </div>`;
+      </mwc-list-item>
+    </ha-button-menu>`;
     }
     render() {
         if (!this.hass || !this._config)
@@ -1111,29 +1096,9 @@ ParcelTrackerCard.styles = i$3 `
       margin-top: 4px;
     }
 
-    .parcel-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-      padding: 0 16px 8px 56px;
-    }
-
-    .parcel-actions button {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font: inherit;
-      font-size: 0.85em;
-      background: var(--secondary-background-color);
-      color: var(--primary-text-color);
-      border: none;
-      border-radius: 8px;
-      padding: 6px 10px;
-      cursor: pointer;
-    }
-
-    .parcel-actions button ha-icon {
-      --mdc-icon-size: 16px;
+    mwc-list-item.danger {
+      color: var(--error-color);
+      --mdc-theme-text-primary-on-background: var(--error-color);
     }
 
     ha-dialog button {
@@ -1145,7 +1110,6 @@ ParcelTrackerCard.styles = i$3 `
       color: var(--primary-color);
     }
 
-    .parcel-actions button.danger,
     ha-dialog button.danger {
       color: var(--error-color);
     }
@@ -1160,9 +1124,6 @@ __decorate([
 __decorate([
     r()
 ], ParcelTrackerCard.prototype, "_config", void 0);
-__decorate([
-    r()
-], ParcelTrackerCard.prototype, "_openMenuEntityId", void 0);
 __decorate([
     r()
 ], ParcelTrackerCard.prototype, "_pendingDelete", void 0);
